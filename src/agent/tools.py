@@ -41,7 +41,7 @@ Solve this step by step.
 """
 calculator_prompt = PromptTemplate(template=calculator_template, input_variables=["query"])
 calculator_llm = OpenAI(api_key=OPENAI_API_KEY, temperature=0) # model=MODEL, 
-calculator_chain = LLMChain(llm=calculator_llm, prompt=calculator_prompt) 
+calculator_chain = calculator_prompt | calculator_llm # LLMChain(llm=calculator_llm, prompt=calculator_prompt) 
 calculator_tool = Tool(
     name="Calculator",
     func=calculator_chain.run,
