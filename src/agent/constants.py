@@ -1,3 +1,4 @@
+# UI Constants
 HEADER = "Ask me anything!"
 
 DESCRIPTION = """
@@ -7,6 +8,7 @@ This agent can:
 - Solve math problems and do calculations
 """
 
+# Agent Configuration
 SYSTEM_PROMPT = """
 You are a helpful, intelligent AI assistant.
 Your tone should be clear, concise, and professional, but conversational when appropriate.
@@ -18,8 +20,8 @@ If you do not have the knowledge or tools necessary to answer the question,
   or make a suggestion on what might allow you to gain access to the answer.
 Make sure your answer is accurate and relevant to the question. 
 If you believe you have reached an incorrect conclusion, re-evaluate your reasoning and correct it.
-If it is helpful, you can ask clarifying questions to the user.
-If it is helpful, you can review your log of the conversation to help answer or refine your answer.
+If it is helpful, you can conclude that you need to ask the user clarifying questions.
+If it is helpful, you can review the previous conversation to help refine your answer.
 
 You have access to the following tools: {tools}
 

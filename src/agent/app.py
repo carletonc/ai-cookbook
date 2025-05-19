@@ -1,3 +1,10 @@
+"""
+Simple LLM Agent Demo Application
+
+This is a simplified version of the chat application that demonstrates basic LangChain agent functionality.
+It provides a single-turn interaction model without conversation history or context management.
+Use this as a starting point for understanding agent implementation, then see chat_app.py for the full featured version.
+"""
 import os
 import streamlit as st
 from langchain.agents import AgentExecutor, create_react_agent
@@ -5,9 +12,10 @@ from langchain.agents import AgentExecutor, create_react_agent
 # uses v1/completions and models such as `text-davinci-003`
 # ChatOpenAI expects a plain string and returns a plain string, 
 # uses v1/chat/completions and models such as `gpt-4.1-mini`
-from langchain_openai import OpenAI, ChatOpenAI
+from langchain_openai import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
+from pydantic import SecretStr
 
 from constants import HEADER, DESCRIPTION, SYSTEM_PROMPT
 from tools import tools
@@ -45,8 +53,11 @@ if api_key:
         template=SYSTEM_PROMPT 
     )
 
-    # Create the agent
-    llm = OpenAI(api_key=os.environ["OPENAI_API_KEY"], temperature=0) # model=MODEL, 
+    # Create the agent with proper typing for API key
+    llm = OpenAI(
+        api_key=SecretStr(os.environ["OPENAI_API_KEY"]), 
+        temperature=0
+    )
     agent = create_react_agent(llm, tools, agent_prompt)
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
     

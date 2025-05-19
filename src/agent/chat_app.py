@@ -1,3 +1,18 @@
+"""
+Multi-turn LLM Agent Chat Application
+
+This module implements a Streamlit-based chat interface for interacting with a LangChain agent.
+It supports:
+- Multi-turn conversations with context preservation
+- Configurable model selection and parameters
+- Chat history management and export
+- Agent thought process visualization
+
+Key Components:
+- LangChain agent with custom tools (from tools.py)
+- Streamlit UI with sidebar configuration
+- Session state management for conversation context
+"""
 import os
 import streamlit as st
 from langchain.agents import AgentExecutor, create_react_agent
@@ -9,6 +24,7 @@ from langchain_openai import OpenAI, ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from typing import Dict, List
+from pydantic import SecretStr
 
 from constants import HEADER, DESCRIPTION, SYSTEM_PROMPT
 from tools import tools
@@ -17,8 +33,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-MODEL = "gpt-4.1-mini"
 
 # Page configuration
 st.set_page_config(page_title="Multi-turn LLM Agent Demo", layout="wide")
@@ -78,8 +92,13 @@ if api_key:
         template=SYSTEM_PROMPT + "\nPrevious conversation:\n{chat_history}\n"
     )
 
-    # Create the agent
-    llm = ChatOpenAI(api_key=OPENAI_API_KEY, model=selected_model, temperature=temperature)
+    # Create the agent with proper typing for API key
+    api_key_str = os.environ.get("OPENAI_API_KEY")
+    llm = ChatOpenAI(
+        api_key=SecretStr(api_key_str) if api_key_str else None,
+        model=selected_model, 
+        temperature=temperature
+    )
     agent = create_react_agent(llm, tools, agent_prompt)
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
     
