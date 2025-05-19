@@ -1,12 +1,11 @@
 import os
 import streamlit as st
 from langchain.agents import AgentExecutor, create_react_agent
-# expects a plain string and returns a plain string, 
+# OpenAI expects a plain string and returns a plain string, 
 # uses v1/completions and models such as `text-davinci-003`
-from langchain_openai import OpenAI 
-# expects a plain string and returns a plain string, 
+# ChatOpenAI expects a plain string and returns a plain string, 
 # uses v1/chat/completions and models such as `gpt-4.1-mini`
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import OpenAI, ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 

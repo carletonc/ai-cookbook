@@ -34,17 +34,20 @@ wikipedia_tool = Tool(
 )
 
 # Tool 3: Calculator via LLM
-calculator_template = """
-You are a calculator. You can solve math problems.
-The problem is: {query}
-Solve this step by step.
-"""
-calculator_prompt = PromptTemplate(template=calculator_template, input_variables=["query"])
-calculator_llm = OpenAI(api_key=OPENAI_API_KEY, temperature=0) # model=MODEL, 
-calculator_chain = calculator_prompt | calculator_llm # LLMChain(llm=calculator_llm, prompt=calculator_prompt) 
+def calculator_tool(query: str) -> str:
+    calculator_template = """
+    You are a calculator. You can solve math problems.
+    The problem is: {query}
+    Solve this step by step until you reach the final answer.
+    """
+    calculator_prompt = PromptTemplate(template=calculator_template, input_variables=["query"])
+    calculator_llm = OpenAI(api_key=OPENAI_API_KEY, temperature=0) # model=MODEL, 
+    calculator_chain = calculator_prompt | calculator_llm # LLMChain(llm=calculator_llm, prompt=calculator_prompt) 
+    return calculator_chain.invoke({"query": query})    
+
 calculator_tool = Tool(
     name="Calculator",
-    func=calculator_chain.run,
+    func=calculator_tool,
     description="""
     Useful for solving math problems. Input should be a math problem.
     """

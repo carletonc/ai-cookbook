@@ -1,8 +1,11 @@
 import os
 import streamlit as st
 from langchain.agents import AgentExecutor, create_react_agent
-from langchain_openai import OpenAI 
-from langchain_community.chat_models import ChatOpenAI
+# OpenAI expects a plain string and returns a plain string, 
+# uses v1/completions and models such as `text-davinci-003`
+# ChatOpenAI expects a plain string and returns a plain string, 
+# uses v1/chat/completions and models such as `gpt-4.1-mini`
+from langchain_openai import OpenAI, ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from typing import Dict, List
@@ -44,7 +47,7 @@ with st.sidebar:
     
     # Add temperature control
     temperature = st.slider("Temperature:", min_value=0.0, max_value=1.0, value=0.3, step=0.1)
-    history_limit = st.number_input("History Limit:", min_value=1, max_value=100, value=10, step=1)
+    memory_history_limit = st.number_input("Memory Limit:", min_value=1, max_value=100, value=10, step=1)
     
     st.markdown("### Current System Prompt:")
     st.info(SYSTEM_PROMPT)
@@ -95,7 +98,7 @@ if api_key:
             # Only include messages up to but not including the current user message
             chat_history = "\n".join([
                 f"{msg['role'].upper()}: {msg['content']}"
-                for msg in st.session_state.messages[:-1][-history_limit:]
+                for msg in st.session_state.messages[:-1][-memory_history_limit:]
             ])
         
         with st.chat_message("assistant"):
