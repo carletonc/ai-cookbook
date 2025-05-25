@@ -46,10 +46,10 @@ Score the factual accuracy of the provided summary on a 1-5 scale:
 
 **OUTPUT FORMAT**: 
 Your final output shout be a JSON object containing your rating and a concise statement with your reasoning for the score formatted exactly like this:
-{
+\{{
     "rating": 4,
     "reasoning": "Revenue figures are accurate with appropriate rounding, but minor precision loss in percentage calculation."
-}
+}}\\
 
 **INPUT PROMPT WITH CONTEXTUAL DATA**:
 {input_prompt_and_data}
@@ -89,10 +89,10 @@ Assess the logical flow and structural coherence on a 1-5 scale:
 
 **OUTPUT FORMAT**: 
 Your final output shout be a JSON object containing your rating and a concise statement with your reasoning for the score formatted exactly like this:
-{
+\{{
     "rating": 4,
     "reasoning": "Clear logical flow from context to findings to recommendations, but missing one transitional phrase between key points."
-}
+}}\\
 
 **INPUT PROMPT WITH CONTEXTUAL DATA**:
 {input_prompt_and_data}
@@ -133,10 +133,10 @@ Rate the conciseness and information efficiency on a 1-5 scale:
 
 **OUTPUT FORMAT**: 
 Your final output shout be a JSON object containing your rating and a concise statement with your reasoning for the score formatted exactly like this:
-{
+\{{
     "rating": 4,
     "reasoning": "Information is clearly conveyed with minimal redundancy, though one phrase could be condensed without losing meaning."
-}
+}}\\
 
 **INPUT PROMPT WITH CONTEXTUAL DATA**:
 {input_prompt_and_data}
@@ -178,10 +178,10 @@ Evaluate format adherence and presentation standards on a 1-5 scale:
 
 **OUTPUT FORMAT**: 
 Your final output shout be a JSON object containing your rating and a concise statement with your reasoning for the score formatted exactly like this:
-{
+\{{
     "rating": 4,
     "reasoning": "Proper structure and headers maintained, but bullet point style inconsistent with specification (- instead of •)."
-}
+}}\\
 
 **INPUT PROMPT WITH CONTEXTUAL DATA**:
 {input_prompt_and_data}
@@ -221,10 +221,10 @@ Assess adherence to source material and identify any unsupported claims on a 1-5
 
 **OUTPUT FORMAT**: 
 Your final output shout be a JSON object containing your rating and a concise statement with your reasoning for the score formatted exactly like this:
-{
+\{{
     "rating": 4,
     "reasoning": "All statistics accurately reflect source data, with one reasonable inference clearly marked as interpretation rather than fact."
-}
+}}\\
 
 **INPUT PROMPT WITH CONTEXTUAL DATA**:
 {input_prompt_and_data}
@@ -238,14 +238,19 @@ Remember your output should be a JSON object with the keys "rating" and "reasoni
 TUNING_PROMPT = """
 You are an expert LLM prompt engineer specializing in iterative prompt optimization.
 
-Your task is to review the following:
-- Original Prompt: {input_prompt}
-- Input Data: {data}
-- LLM Output: {llm_output}
-- LLM-as-a-Judge Evaluations: {llm_evaluations}
+Your task is to review the original prompt, the input data it has at context, the LLM output from the original prompt and its input data, and the LLM-as-a-Judge prompts and their evaluation outputs.
+Then you will suggest improvements to the original prompt based on the evaluations provided by LLM-as-a-Judge.
+Your final output MUST be a JSON object exactly in this format:
+\{{
+    "new_prompt": "[Your improved prompt here]",
+    "changes_made": ["[Change 1: ...]", "[Change 2: ...]"],
+    "rationale": "Summarize why these changes will likely improve the lowest-scoring evaluation dimensions."
+}}\\
+    
+Think step-by-step and follow the steps below to ensure you provide a comprehensive and effective revision.
+If all evaluation scores are 5, you will output the original prompt and explain that no changes are needed.
 
-**Process:**
-
+**PROCESS:**
 1. **Analyze Evaluation Scores**
    - List all evaluation scores and identify the lowest-scoring dimension(s).
    - Briefly summarize the main issues based on the judges' reasoning.
@@ -266,11 +271,32 @@ Your task is to review the following:
    - Do not remove essential context or change the core intent.
    - Use markdown formatting if specified in the original prompt.
 
-**Output:**  
-Return a JSON object exactly in this format:
-{
-    "new_prompt": "[Your improved prompt here]",
-    "changes_made": ["[Change 1: ...]", "[Change 2: ...]"],
-    "rationale": "Summarize why these changes will likely improve the lowest-scoring evaluation dimensions."
-}
+    
+- ORIGINAL PROMPT: 
+{input_prompt}
+
+- INPUT DATA: 
+{data}
+
+- LLM OUTPUT: 
+{llm_output}
+
+- LLM-AS-A-JUDGE EVALUATIONS: 
+{llm_evaluations}
+
+**REMEMBER:** 
+No matter how large the input above is, always output only the JSON object in the required format.
+Your final output MUST be a JSON object with the keys "new_prompt", "changes_made", and "rationale".
+
+**EXAMPLE OUTPUT:**
+\{{
+  "new_prompt": "Summarize the input data in a concise paragraph under 200 words.",
+  "changes_made": [
+    "Added word limit for conciseness.",
+    "Specified paragraph format."
+  ],
+  "rationale": "These changes address low conciseness and formatting scores."
+}}\\
+    
+Output ONLY the JSON object, and nothing else.
 """
