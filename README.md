@@ -13,3 +13,13 @@ A collection of cool AI tools and examples to play with! Here's what's cooking:
 2. Install requirements: `pip install -r requirements.txt`
 3. Add your OpenAI API key to a `.env` file
 4. Pick a demo to run!
+
+---
+
+**To launch any interactive demo, run:**
+
+```
+streamlit run app.py
+```
+
+from the appropriate subdirectory (e.g., `src/prompt_tuning`, `src/agent`, etc.).

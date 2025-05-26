@@ -7,3 +7,4 @@ openai==1.79.0
 python-dotenv==1.1.0
 wikipedia==1.4.0
 duckduckgo-search==8.0.2
+chromadb==1.0.9

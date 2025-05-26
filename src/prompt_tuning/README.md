@@ -4,6 +4,18 @@
 
 This module template helps systematically evaluate and improve your prompts using quantitative metrics and iterative refinement. Think of it as a starting point - the evaluation metrics and scoring system are meant to be adapted to your needs.
 
+## 🚦 Running the Demo App
+
+To launch the interactive prompt tuning demo, run:
+
+```
+streamlit run app.py
+```
+
+from this directory.
+
+---
+
 ## 🔍 Current Evaluation Metrics
 
 - **Factualness & Accuracy**: Checks if the output matches known facts and data
