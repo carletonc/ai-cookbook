@@ -22,3 +22,15 @@ A toy example in this repo is searching for "cards that ramp lands" in a Magic: 
 - The initial code here is primarily RAG-focused, but is structured to allow for fine-tuning experiments as well.
 - The repo is a work in progress and intended for research and prototyping.
 
+---
+
+## 🚦 Running the Demo App
+
+To launch the fine-tuning demo app, run:
+
+```
+streamlit run app.py
+```
+
+from this directory.
+
