@@ -13,20 +13,13 @@ from langchain.schema import Document
 #from tools import tools
 from utils import get_json_file, get_txt_file
 
-from dotenv import load_dotenv
-load_dotenv()
-
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
 LLM = ChatOpenAI(
     model="gpt-4.1-mini",
     temperature=0.0
 )
 
-
 rules = get_txt_file()
 card_dict = get_json_file()["data"]
-# Remove 'flavorText' from inner dicts
 for k, v in card_dict.items():
     if isinstance(v, list):
         for item in v:
