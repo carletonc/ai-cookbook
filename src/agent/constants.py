@@ -2,10 +2,10 @@
 HEADER = "Ask me anything!"
 
 DESCRIPTION = """
-This agent can:
-- Search the web for current information
-- Look up detailed information on Wikipedia
-- Solve math problems and do calculations
+This agent has access to various tools to help answer your questions:
+- DuckDuckGo Web Search
+- Wikipedia Look Up
+- A calculator for math problems
 """
 
 # Agent Configuration

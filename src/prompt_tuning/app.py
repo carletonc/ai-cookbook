@@ -10,6 +10,7 @@ from langchain_openai import OpenAI, ChatOpenAI
 from langchain.chains import LLMChain
 import streamlit as st
 
+from constants import DESCRIPTION, dummy_data
 from prompts import (
     STARTING_PROMPT,
     FACTUALNESS_AND_ACCURACY,
@@ -19,14 +20,6 @@ from prompts import (
     HALLUCINATION_AND_SOURCE_VALIDITY,
     TUNING_PROMPT
 )
-
-# Example tabular data for prompt context
-dummy_data = """
-    Quarter,Revenue ($M),Profit Margin (%),Customer Satisfaction (%),Enterprise Growth (%),Consumer Growth (%)
-    Q1 2024,4.1,12.5,85,38,-8
-    Q2 2024,4.3,13.1,87,41,-5
-    Q3 2024,5.18,15.3,72,45,-12
-    """
 
 # List of evaluation prompts (dimensions)
 EVALS = [
@@ -59,10 +52,11 @@ def query_llm(prompt: str, params: dict) -> str:
     else:
         return str(result)
 
-
+st.warning("Because this is a template and work-in-progress, it is prone to errors.")
 
 # --- Streamlit UI ---
-st.title("Prompt Tuning Demo")
+st.title("Prompt Tuning Demo [WIP]")
+st.markdown(DESCRIPTION)
 
 # Sidebar for API key
 with st.sidebar:
@@ -72,7 +66,6 @@ with st.sidebar:
 
 # Only proceed if API key is provided
 if api_key:
-    
     # Initialize the language model (OpenAI GPT-4 mini, deterministic)
     LLM = ChatOpenAI(
         model="gpt-4.1-mini",
