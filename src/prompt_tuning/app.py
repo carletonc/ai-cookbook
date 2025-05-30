@@ -28,12 +28,6 @@ dummy_data = """
     Q3 2024,5.18,15.3,72,45,-12
     """
 
-# Initialize the language model (OpenAI GPT-4 mini, deterministic)
-LLM = ChatOpenAI(
-    model="gpt-4.1-mini",
-    temperature=0.0
-)
-
 # List of evaluation prompts (dimensions)
 EVALS = [
     FACTUALNESS_AND_ACCURACY,
@@ -77,6 +71,12 @@ with st.sidebar:
 
 # Only proceed if API key is provided
 if api_key:
+    
+    # Initialize the language model (OpenAI GPT-4 mini, deterministic)
+    LLM = ChatOpenAI(
+        model="gpt-4.1-mini",
+        temperature=0.0
+    )
 
     # Show the initial prompt in an expandable section
     with st.expander("Show Dummy Data"):
