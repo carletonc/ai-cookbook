@@ -8,6 +8,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain # obsolete
 
 #from tools import tools
+from constants import APP_DESCRIPTION
 from utils import get_json_file, get_txt_file, get_mtg_vectorstore, clean_card_dict
 
 rules = get_txt_file()
@@ -17,7 +18,7 @@ card_dict = clean_card_dict(card_dict)
 # STREAMLIT APP
 st.set_page_config(page_title="MTG Card Search", layout="wide")
 st.title("🤖 MTG Card Search")
-st.write("This app allows you to search for Magic: The Gathering cards using a simple LLM agent.\nRight now it merely stores cards in a vectorDB and retrieves the closest cards, but there are issues with accuracy (precision & recall) that must be resolved for it to work optimally. Future iterations will resolve this.")
+st.write(APP_DESCRIPTION)
 
 with st.sidebar:
     st.header("Configuration")

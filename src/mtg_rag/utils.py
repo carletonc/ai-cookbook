@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import ast
+import streamlit as st
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain.schema import Document
