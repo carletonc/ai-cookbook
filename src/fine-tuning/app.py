@@ -32,8 +32,7 @@ if api_key:
         model="gpt-4.1-mini",
         temperature=0.0
     )
-    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-    persist_path = os.path.join(SCRIPT_DIR, ".chroma_db")
+    
     # Use Streamlit progress bar for feedback
     progress_bar = st.progress(0)
     
@@ -42,7 +41,7 @@ if api_key:
         
     vectorstore = get_mtg_vectorstore(
         card_dict,
-        persist_path=persist_path,
+        #persist_path=persist_path,
         collection_name="mtg-poc",
         embedding_model="text-embedding-3-small",
         batch_size=500,

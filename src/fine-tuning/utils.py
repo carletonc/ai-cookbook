@@ -12,6 +12,7 @@ CARDS_FILE = "AtomicCards.json"
 RULES_FILE = "MagicCompRules_21031101.txt"
 JSON_PATH = os.path.join(SCRIPT_DIR, DATA_FOLDER, CARDS_FILE)
 TXT_PATH = os.path.join(SCRIPT_DIR, DATA_FOLDER, RULES_FILE)
+PERSIST_PATH = os.path.join(SCRIPT_DIR, DATA_FOLDER, "chroma_db")
 
 
 def fetch_mtgjson_data():
@@ -76,7 +77,7 @@ def clean_card_dict(card_dict: dict) -> dict:
     return cleaned
 
 
-def get_mtg_vectorstore(card_dict, persist_path, collection_name="mtg-poc", embedding_model="text-embedding-3-small", batch_size=500, show_progress=None):
+def get_mtg_vectorstore(card_dict, persist_path=PERSIST_PATH, collection_name="mtg-poc", embedding_model="text-embedding-3-small", batch_size=500, show_progress=None):
     """
     Create or load a Chroma vectorstore for MTG cards.
     - card_dict: dict of card_name -> card_data (as string or list of dicts)
@@ -86,6 +87,10 @@ def get_mtg_vectorstore(card_dict, persist_path, collection_name="mtg-poc", embe
     - batch_size: number of docs per batch
     - show_progress: optional callback for progress (e.g., Streamlit progress bar)
     """
+    # Ensure the persist directory exists (parent only, not the full path)
+    #os.makedirs(os.path.dirname(persist_path), exist_ok=True)
+    #if not os.path.exists(persist_path):
+    #    os.makedirs(persist_path, exist_ok=True)
     embedding = OpenAIEmbeddings(model=embedding_model)
     docs = []
     for card_name, raw_str in card_dict.items():

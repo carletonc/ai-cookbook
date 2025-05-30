@@ -37,6 +37,13 @@ with st.sidebar:
     api_key = st.text_input("Enter your OpenAI API Key:", type="password")
     os.environ["OPENAI_API_KEY"] = api_key
     
+    # Add model selection
+    model_options = ["gpt-4.1-mini", "gpt-3.5-turbo"]
+    selected_model = st.selectbox("Select Model:", model_options, index=0)
+    
+    # Add temperature control
+    temperature = st.slider("Temperature:", min_value=0.0, max_value=1.0, value=0.3, step=0.1)
+    
     st.markdown("### Current System Prompt:")
     st.info(SYSTEM_PROMPT)
 
@@ -56,7 +63,8 @@ if api_key:
     # Create the agent with proper typing for API key
     llm = OpenAI(
         api_key=SecretStr(os.environ["OPENAI_API_KEY"]), 
-        temperature=0
+        model=selected_model,
+        temperature=temperature
     )
     agent = create_react_agent(llm, tools, agent_prompt)
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
