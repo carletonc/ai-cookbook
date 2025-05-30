@@ -14,7 +14,6 @@ JSON_PATH = os.path.join(SCRIPT_DIR, DATA_FOLDER, CARDS_FILE)
 TXT_PATH = os.path.join(SCRIPT_DIR, DATA_FOLDER, RULES_FILE)
 PERSIST_PATH = os.path.join(SCRIPT_DIR, DATA_FOLDER, "chroma_db")
 
-
 def fetch_mtgjson_data():
     """Fetch data from MTGJSON and save to file."""
     url = "https://mtgjson.com/api/v5/AtomicCards.json"
@@ -45,8 +44,8 @@ def get_json_file():
             data = json.load(f)
         return data
     else:
-        print(f"{CARDS_FILE} not found in {DATA_FOLDER}. Downloading...")
-        fetch_mtgjson_data()
+        with st.spinner(f"{CARDS_FILE} not found in {DATA_FOLDER}. Downloading..."):
+            fetch_mtgjson_data()
         return get_json_file()
 
 
@@ -56,8 +55,8 @@ def get_txt_file():
             data = f.read()
         return data
     else:
-        print(f"{RULES_FILE} not found in {DATA_FOLDER}. Downloading...")
-        fetch_mtg_rules()
+        with st.spinner(f"{RULES_FILE} not found in {DATA_FOLDER}. Downloading..."):
+            fetch_mtg_rules()
         return get_txt_file()
 
 
@@ -96,7 +95,7 @@ def get_mtg_vectorstore(card_dict, persist_path=PERSIST_PATH, collection_name="m
     for card_name, raw_str in card_dict.items():
         try:
             card_data = ast.literal_eval(raw_str)
-            text_blob = "\n".join(
+            text_blob = ",\n".join(
                 f"{k}: {v}" for entry in card_data for k, v in entry.items()
             )
             docs.append(

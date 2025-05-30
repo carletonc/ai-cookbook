@@ -3,12 +3,9 @@ import ast
 import json
 import streamlit as st
 from langchain.agents import AgentExecutor, create_react_agent
-from langchain_openai import OpenAI, ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import OpenAI, ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain # obsolete
-
-from langchain_community.vectorstores import Chroma
-from langchain.schema import Document
 
 #from tools import tools
 from utils import get_json_file, get_txt_file, get_mtg_vectorstore, clean_card_dict
@@ -20,7 +17,7 @@ card_dict = clean_card_dict(card_dict)
 # STREAMLIT APP
 st.set_page_config(page_title="MTG Card Search", layout="wide")
 st.title("🤖 MTG Card Search")
-st.markdown("This app allows you to search for Magic: The Gathering cards using a simple LLM agent.\nRight now it merely stores cards in a vectorDB and retrieves the closest cards, but there are issues with accuracy (precision & recall) that must be resolved for it to work optimally. Future iterations will resolve this.")
+st.write("This app allows you to search for Magic: The Gathering cards using a simple LLM agent.\nRight now it merely stores cards in a vectorDB and retrieves the closest cards, but there are issues with accuracy (precision & recall) that must be resolved for it to work optimally. Future iterations will resolve this.")
 
 with st.sidebar:
     st.header("Configuration")
@@ -34,6 +31,8 @@ if api_key:
     )
     
     # Use Streamlit progress bar for feedback
+    progress_text = st.empty()
+    progress_text.text("Building Chroma vectorstore...")
     progress_bar = st.progress(0)
     
     def show_progress(val):
@@ -50,7 +49,8 @@ if api_key:
     
     # Hide progress bar after vectorstore creation
     progress_bar.empty()
-    vectorstore = vectorstore.as_retriever(search_kwargs={"k": 25})
+    progress_text.empty()
+    vectorstore = vectorstore.as_retriever(search_kwargs={"k": 5})
     query = st.text_input("Enter your card search query:")
     
     if query:
