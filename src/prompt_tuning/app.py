@@ -68,6 +68,7 @@ st.title("Prompt Tuning Demo")
 with st.sidebar:
     st.header("Configuration")
     api_key = st.text_input("Enter your OpenAI API Key:", type="password")
+    os.environ["OPENAI_API_KEY"] = api_key
 
 # Only proceed if API key is provided
 if api_key:
