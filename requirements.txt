@@ -1,5 +1,4 @@
-python==3.11.4
-pip==25.1.1
+#python==3.11.4 # commented out for compatability with streamlit cloud
 streamlit==1.45.1
 langchain==0.3.25
 langchain-openai==0.3.17
