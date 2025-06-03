@@ -55,6 +55,7 @@ def query_llm(prompt: str, params: dict) -> str:
 st.warning("Because this is a template and work-in-progress, it is prone to errors.")
 
 # --- Streamlit UI ---
+st.set_page_config(page_title="Automated Prompt Tuning Demo", layout="wide")
 st.title("Prompt Tuning Demo [WIP]")
 st.markdown(DESCRIPTION)
 

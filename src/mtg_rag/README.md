@@ -1,55 +1,94 @@
-# Fine-Tuning & Retrieval-Augmented Generation (RAG) Exploration [WIP]
+# Magic The Gathering Card Search and Recommendation Engine [WIP]
 
-This directory is part of a broader project to explore how to improve the knowledge and reasoning capabilities of large language models (LLMs) in highly specialized domains—where even web search and standard RAG approaches often fail to retrieve or synthesize the right information.
+This project demonstrates a phased approach to building an intelligent card search and recommendation system for Magic: The Gathering. It explores the combination of vector similarity search, large language models (LLMs), and domain-specific knowledge in a specialized context where traditional search methods often fall short.
 
 ## Project Purpose
-- **Domain:** Magic: The Gathering (MTG) cards and rules
-- **Goal:** Enable LLMs to recommend cards and answer questions about MTG using both structured card data (`AtomicCards.json`), the official rules (`MagicCompRules_21031101.txt`), and community knowledge (slang, idioms, and nuanced reasoning).
-- **Motivation:** Many domains (like MTG) have complex, evolving, and highly specific rules, slang, and community knowledge that are not well-covered by general web search or public LLM training data. This project aims to bridge that gap and make recommendations that reflect real player experience.
+- **Domain:** Magic: The Gathering (MTG) cards, rules, and community knowledge
+- **Goal:** Create an intelligent search system that understands both the technical and cultural aspects of MTG
+- **Motivation:** Bridge the gap between literal card text and the rich, nuanced understanding that experienced players possess
 
-## Approach
-- **Phase 1: Retrieval-Augmented Generation (RAG)**
-  - Use vector search to retrieve relevant card, rule, and (eventually) community knowledge snippets for a given query.
-  - Augment LLM prompts with these retrieved contexts to improve answer and recommendation quality.
-  - Evaluate how well RAG alone can help the LLM reason about the domain, including slang and nuanced meanings.
-- **Phase 2: Fine-Tuning (Planned/Future)**
-  - If RAG alone is insufficient, experiment with fine-tuning an LLM on domain-specific data, QA pairs, and community-sourced examples (including slang and idioms).
-  - Compare performance of RAG vs. fine-tuned models, especially for queries involving embedded meanings or non-obvious recommendations.
+## Development Phases
 
-## Data
-- `data/AtomicCards.json`: All MTG cards (structured data)
-- `data/MagicCompRules_21031101.txt`: Official MTG comprehensive rules (plain text)
-- `data/chroma_db/`: Vector database for fast retrieval (auto-generated)
-- **Planned:** Community Q&A, slang glossaries, deck techs, and tournament commentary
+### Phase 1: Semantic Card Search (Current)
+- Build a robust vector database of MTG cards using ChromaDB
+- Implement semantic search capabilities to find cards based on natural language queries
+- Focus on proper embedding and retrieval of card characteristics
+- Establish filtering and ranking mechanisms for search results
 
-## Status
-- RAG pipeline and demo app in progress
-- Fine-tuning experiments planned for future iterations
-- Community knowledge and slang integration planned
+### Phase 2: LLM-Enhanced Recommendations
+- Integrate an LLM to interpret user queries and manage search parameters
+- Develop intelligent filtering strategies based on game context
+- Enable more natural interaction with the card database
+- Create a system that can explain its recommendations
+
+### Phase 3: Rules and Context Integration
+- Incorporate comprehensive rules knowledge
+- Add keyword definitions and mechanics explanations
+- Integrate community terminology and slang
+- Bridge formal rules with informal player knowledge
+- Enable the system to understand and explain card interactions
+
+### Phase 4: Model Optimization (If Viable)
+- Evaluate the necessity and feasibility of fine-tuning
+- Consider dataset size limitations and alternatives
+- Potentially explore few-shot learning approaches
+- Focus on preserving accuracy while expanding capabilities
+
+## Current Implementation
+
+### Data Sources
+- `data/AtomicCards.json`: Comprehensive MTG card database
+- `data/MagicCompRules_21031101.txt`: Official rules text
+- `data/chroma_db/`: Vector embeddings and search index
+- **Planned:**
+  - Keyword and mechanics glossary
+  - Community terminology dictionary
+  - Common card interactions database
+
+### Features (Phase 1)
+- Semantic search across card characteristics
+- Natural language query interpretation
+- Filtered search by card attributes
+- Similarity scoring for results
+- Interactive result exploration
+
+### Technical Stack
+- ChromaDB for vector storage and retrieval
+- OpenAI embeddings for semantic understanding
+- Streamlit for interactive interface
+- LangChain for LLM integration (Phase 2)
 
 ---
 
-## 🚦 Running the Demo App
+## 🚦 Running the Demo
 
-To launch the fine-tuning & RAG demo app, run:
-
+Launch the Streamlit app:
 ```
 streamlit run app.py
 ```
 
-from this directory.
+## Future Milestones
+
+### Phase 2
+- [ ] LLM integration for query interpretation
+- [ ] Context-aware filtering strategies
+- [ ] Explanation generation for recommendations
+- [ ] Interactive refinement of searches
+
+### Phase 3
+- [ ] Rules knowledge integration
+- [ ] Keyword and mechanics database
+- [ ] Slang and terminology mapping
+- [ ] Card interaction understanding
+
+### Phase 4 (If Viable)
+- [ ] Evaluate fine-tuning feasibility
+- [ ] Explore few-shot learning options
+- [ ] Test hybrid approaches
+- [ ] Measure knowledge retention
 
 ---
 
-## Future Directions
-- Add more domain-specific datasets (e.g., tournament rulings, decklists, community Q&A, slang/idiom glossaries)
-- Explore prompt engineering and evaluation strategies for nuanced recommendations
-- Implement and benchmark fine-tuning workflows
-- Develop robust evaluation metrics for domain-specific QA and recommendations
-- Collect and integrate user feedback to improve recommendations
+## Project Significance
 
----
-
-## Why This Matters
-
-Many real-world domains require deep, context-specific knowledge—including slang, idioms, and community wisdom—that LLMs cannot learn from the open web or official documentation alone. This project is a testbed for building, evaluating, and fine-tuning LLMs in such settings, with the goal of making recommendations that feel authentic and useful to real players.
+This project serves as a case study in building intelligent search systems for specialized domains. It demonstrates how to combine vector search, LLMs, and domain knowledge in a way that respects both technical accuracy and community understanding. The phased approach ensures a solid foundation before adding complexity, while keeping the focus on practical utility for users.
