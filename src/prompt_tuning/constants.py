@@ -1,5 +1,5 @@
 DESCRIPTION = """
-This app is a tempalte that demonstrates an semi-supervised way to automate prompt tuning inspired by neural network training.
+This app is a template that demonstrates an semi-supervised way to automate prompt tuning inspired by neural network training.
 
 Our initial prompt follows basic prompt engineering techniques, such as giving the LLM an identity, a task, some context data, and instructions.
 
