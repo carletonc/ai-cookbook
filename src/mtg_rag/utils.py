@@ -4,7 +4,8 @@ import requests
 import ast
 import streamlit as st
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
+#from langchain_community.vectorstores import Chroma
 from langchain.schema import Document
 
 # Constants for file paths and data locations
@@ -457,5 +458,5 @@ def get_mtg_vectorstore(card_data_dict, persist_path=PERSIST_PATH, collection_na
             vectorstore.add_documents(doc_chunk)
             if show_progress:
                 show_progress(min((i+1)*batch_size/total, 1.0))
-        vectorstore.persist()
+        #vectorstore.persist()
     return vectorstore
