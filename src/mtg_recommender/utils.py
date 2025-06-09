@@ -114,7 +114,7 @@ def preprocess_card_fields(df):
                 df[col] = df[col].astype(str)
             else:
                 # Convert lists to comma-separated strings, properly handling each array element
-                df[col] = df[col].apply(lambda x: ','.join(x) if isinstance(x, list) and x else None)
+                df[col] = df[col].apply(lambda x: ', '.join(x) if isinstance(x, list) and x else None)
         elif field_type == 'boolean':
             # Convert nulls to False for boolean fields
             df[col] = df[col].fillna(False)

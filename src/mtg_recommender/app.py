@@ -133,14 +133,14 @@ if api_key:
                 "Text": doc.metadata.get('text', '').replace('\n', ' '),
                 "Type": doc.metadata.get('type', ''),
                 "Mana Cost": doc.metadata.get('manaCost', ''),
-                "Colors": doc.metadata.get('colors', []),
+                "Colors": doc.metadata.get('colors', ''),
                 "Power/Toughness": f"{doc.metadata.get('power', '-')}/{doc.metadata.get('toughness', '-')}" if doc.metadata.get('power') else '-',
-                "Keywords": doc.metadata.get('keywords', []),
+                "Keywords": doc.metadata.get('keywords', ''),
                 "Score": f"{score:.6f}"
             })
         
         # Convert to DataFrame and display
-        df = pd.DataFrame(table_data)
+        df = pd.DataFrame(table_data) 
         st.dataframe(
             df,
             hide_index=True,
@@ -174,10 +174,10 @@ if api_key:
                         "Name": selected_card.metadata.get('name', selected_card.metadata.get('cardName')),
                         "Type": selected_card.metadata.get('type'),
                         "Mana Cost": selected_card.metadata.get('manaCost'),
-                        "Colors": selected_card.metadata.get('colors', []),
-                        "Color Identity": selected_card.metadata.get('colorIdentity', []),
+                        "Colors": selected_card.metadata.get('colors', ''),
+                        "Color Identity": selected_card.metadata.get('colorIdentity', ''),
                         "Power/Toughness": f"{selected_card.metadata.get('power', '-')}/{selected_card.metadata.get('toughness', '-')}" if selected_card.metadata.get('power') else None,
-                        "Keywords": selected_card.metadata.get('keywords', []),
+                        "Keywords": selected_card.metadata.get('keywords', ''),
                         "Oracle Text": selected_card.metadata.get('text'),
                     }
                     
