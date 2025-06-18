@@ -51,4 +51,5 @@ SUBTYPES = [
 
 COLORIDENTITY_DICT = {'Black': 'B', 'Green': 'G', 'Red': 'R', 'Blue': 'U', 'White': 'W'}
 COLORIDENTITY_DICT_REVERSE = {v:k for k,v in COLORIDENTITY_DICT.items()}
+
 LAYOUT = ['adventure', 'aftermath', 'augment', 'case', 'class', 'flip', 'host', 'leveler', 'meld', 'modal_dfc', 'mutate', 'normal', 'planar', 'prototype', 'reversible_card', 'saga', 'scheme', 'split', 'transform', 'vanguard']
