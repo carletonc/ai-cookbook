@@ -12,7 +12,7 @@ from langchain.agents import AgentExecutor, create_react_agent
 # uses v1/completions and models such as `text-davinci-003`
 # ChatOpenAI expects a plain string and returns a plain string, 
 # uses v1/chat/completions and models such as `gpt-4.1-mini`
-from langchain_openai import OpenAI
+from langchain_openai import OpenAI, ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from pydantic import SecretStr
@@ -24,8 +24,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-MODEL = "gpt-4.1-mini"
 
 # Page configuration
 st.set_page_config(page_title="Simple LLM Agent Demo", layout="wide")
@@ -61,7 +59,7 @@ if api_key:
     )
 
     # Create the agent with proper typing for API key
-    llm = OpenAI(
+    llm = ChatOpenAI(
         api_key=SecretStr(os.environ["OPENAI_API_KEY"]), 
         model=selected_model,
         temperature=temperature
@@ -76,9 +74,11 @@ if api_key:
         with st.spinner("Agent is working..."):
             try:
                 # Execute the agent
-                response = agent_executor.invoke(
-                    {"input": user_input, "tool_names": ", ".join([tool.name for tool in tools])} #, "agent_scratchpad": ""}
-                    )
+                response = agent_executor.invoke({
+                    "input": user_input,
+                    "tool_names": ", ".join([tool.name for tool in tools]) 
+                    #, "agent_scratchpad": ""
+                })
                 
                 # Display the response
                 st.markdown("### Answer")
