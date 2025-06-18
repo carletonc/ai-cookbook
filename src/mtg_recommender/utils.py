@@ -103,7 +103,7 @@ def preprocess_card_fields(df):
     
     # Process each field according to its type
     for col, field_info in METADATA_FIELDS.items():
-        print(col)
+        
         if col not in df.columns:
             df[col] = None
             continue
