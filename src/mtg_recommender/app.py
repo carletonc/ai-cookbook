@@ -6,7 +6,6 @@ from langchain_openai import OpenAI, ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain # obsolete
 
-#from tools import tools
 from constants import METADATA_FIELDS
 from utils import load_json_file, load_txt_file, get_vector_store, show_results_table, show_dropdown_details
 from sidebar import init_sidebar
@@ -38,7 +37,6 @@ if api_key:
     # card_df = load_json_file()
     
     vectorstore = get_vector_store()
-    
     k, chroma_filter = init_sidebar()
 
     query = st.text_input("Enter your card search query:")
@@ -53,4 +51,3 @@ if api_key:
         
         show_results_table(results)
         show_dropdown_details(results)
-        
