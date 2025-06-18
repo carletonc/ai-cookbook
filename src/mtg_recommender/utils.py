@@ -320,3 +320,82 @@ def get_vector_store():
     progress_text.empty()
     
     return vectorstore
+
+def show_results_table(results):
+    st.subheader("Results:")
+    # Create a list to store the table data
+    table_data = []
+    for doc, score in results:
+        # Extract the most relevant features
+        table_data.append({
+            "Name": doc.metadata.get('name', doc.metadata.get('cardName', 'Unknown')),
+            "Text": doc.metadata.get('text', '').replace('\n', ' '),
+            "Type": doc.metadata.get('type', ''),
+            "Mana Cost": doc.metadata.get('manaCost', ''),
+            "Colors": doc.metadata.get('colors', ''),
+            "Power/Toughness": f"{doc.metadata.get('power', '-')}/{doc.metadata.get('toughness', '-')}" if doc.metadata.get('power') else '-',
+            "Keywords": doc.metadata.get('keywords', ''),
+            "Score": f"{score:.6f}"
+        })
+    
+    # Convert to DataFrame and display
+    df = pd.DataFrame(table_data) 
+    st.dataframe(
+        df,
+        hide_index=True,
+        use_container_width=True,
+        column_config={
+            "Name": st.column_config.TextColumn(width="medium"),
+            "Text": st.column_config.TextColumn(width="large"),
+            "Type": st.column_config.TextColumn(width="medium"),
+            "Mana Cost": st.column_config.TextColumn(width="small"),
+            "Colors": st.column_config.TextColumn(width="small"),
+            "Power/Toughness": st.column_config.TextColumn(width="small"),
+            "Keywords": st.column_config.TextColumn(width="medium"),
+            "Score": st.column_config.NumberColumn(width="small")
+        }
+    )
+    return
+
+def show_dropdown_details(results):
+    options = [doc.metadata.get('name', doc.metadata.get('cardName', 'Unknown')) for doc, _ in results]
+    
+    # Add an expander for detailed card information
+    with st.expander("Show Detailed Card Information"):
+        selected_name = st.selectbox("Select a card for details:", options)
+        if selected_name:
+            selected_card = None
+            for doc, score in results:
+                if doc.metadata.get('name', doc.metadata.get('cardName')) == selected_name:
+                    selected_card = doc
+                    break
+            
+            if selected_card:
+                # Display comprehensive card information
+                st.write("### Card Details")
+                details = {
+                    "Name": selected_card.metadata.get('name', selected_card.metadata.get('cardName')),
+                    "Type": selected_card.metadata.get('type'),
+                    "Mana Cost": selected_card.metadata.get('manaCost'),
+                    "Colors": selected_card.metadata.get('colors', ''),
+                    "Color Identity": selected_card.metadata.get('colorIdentity', ''),
+                    "Power/Toughness": f"{selected_card.metadata.get('power', '-')}/{selected_card.metadata.get('toughness', '-')}" if selected_card.metadata.get('power') else None,
+                    "Keywords": selected_card.metadata.get('keywords', ''),
+                    "Card Text": selected_card.metadata.get('text'),
+                }
+                
+                for key, value in details.items():
+                    if value:
+                        st.write(f"**{key}:** {value}")
+                
+                # Display legalities
+                st.write("### Legalities")
+                legalities = {k.replace('legalities.', ''): v 
+                            for k, v in selected_card.metadata.items() 
+                            if k.startswith('legalities.')}
+                
+                cols = st.columns(3)
+                for idx, (format_name, legal) in enumerate(legalities.items()):
+                    with cols[idx % 3]:
+                        st.write(f"**{format_name.title()}:** {'Legal' if legal else 'Not Legal'}")
+    return
