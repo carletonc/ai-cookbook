@@ -7,7 +7,6 @@ on:
       - '**/requirements.txt'
       - '.test-all-apps.sh'
       - '.github/workflows/test-all-apps.yml'
-  pull_request:
 
 jobs:
   test:
@@ -23,4 +22,4 @@ jobs:
       - name: Make test script executable
         run: chmod +x .test-all-apps.sh
       - name: Run all app tests
-        run: ./.test-all-apps.sh
+        run: ././.test-all-apps.sh
