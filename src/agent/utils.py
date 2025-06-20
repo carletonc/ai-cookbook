@@ -3,7 +3,7 @@ import streamlit as st
 from constants import SYSTEM_PROMPT
 
 def validate_openai_api_key(api_key):
-    """Returns True if the OpenAI API key is valid, False otherwise. Shows a Streamlit warning in the sidebar if invalid, but does nothing if key is None/empty."""
+    """Check if the OpenAI API key is valid. Returns True if valid, False otherwise. Shows a warning in the sidebar if invalid."""
     if not api_key:
         # No key entered yet; do not warn
         return False
@@ -20,12 +20,11 @@ def validate_openai_api_key(api_key):
     
 # Sidebar for configuration
 def init_sidebar():
+    """Render sidebar UI for model selection and agent configuration. Returns selected model, temperature, and memory limit."""
     with st.sidebar:
         # Add model selection
         model_options = ["gpt-4.1-mini", "gpt-3.5-turbo"]
         selected_model = st.selectbox("Select Model:", model_options, index=0)
-        
-        # Add temperature control
         temperature = st.slider("Temperature:", min_value=0.0, max_value=1.0, value=0.5, step=0.1)
         memory_history_limit = st.number_input("Memory Limit:", min_value=1, max_value=100, value=50, step=1)
         

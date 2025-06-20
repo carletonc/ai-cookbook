@@ -10,6 +10,7 @@ from tools import tools
 from utils import validate_openai_api_key, init_sidebar
 
 def get_agent():
+    """Create and return an agent executor for single-turn LLM agent."""
     agent_prompt = PromptTemplate(
         # System prompt variables
         input_variables=["input", "tool_names"], 
@@ -28,8 +29,6 @@ def get_agent():
     )
     return agent_executor
 
-
-
 # Page configuration
 st.set_page_config(page_title="Simple LLM Agent Demo", layout="wide")
 st.title("🤖 Simple LLM Agent")
@@ -38,11 +37,14 @@ st.title("🤖 Simple LLM Agent")
 st.header(HEADER)
 st.markdown(DESCRIPTION)
 
+with st.sidebar:
+    st.header("Configuration")
+    api_key = st.text_input("Enter your OpenAI API Key:", type="password")
+
 # Only proceed if API key is provided
 if validate_openai_api_key(api_key): 
     os.environ["OPENAI_API_KEY"] = api_key
     sidebar = init_sidebar()
-    
     agent_executor = get_agent()
     
     # Chat interface

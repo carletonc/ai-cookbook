@@ -10,12 +10,11 @@ from tools import tools
 from utils import validate_openai_api_key, init_sidebar
 
 def get_agent():
+    """Create and return an agent executor for multi-turn LLM agent."""
     agent_prompt = PromptTemplate(
-        # System prompt variables
         input_variables=["input", "tool_names", "chat_history"], 
         template=SYSTEM_PROMPT + "\nPrevious conversation:\n{chat_history}\n"
     )
-
     llm = ChatOpenAI(
         model=sidebar['model'], 
         temperature=sidebar['temperature'] 
@@ -30,14 +29,14 @@ def get_agent():
     return agent_executor
 
 def update_context(user_input: str, response: str) -> None:
-    """Update conversation context with new information"""
+    """Update conversation context with new user input and agent response."""
     st.session_state.conversation_context["topics"].add(user_input[:50])
     st.session_state.conversation_context["last_input"] = user_input
     st.session_state.conversation_context["agent_memory"].append({
         "input": user_input,
         "response": response
     })
-    
+
 def initialize_session_state():
     """Initialize session state for chat history and context if not already set."""
     if "messages" not in st.session_state:
@@ -72,10 +71,9 @@ for message in st.session_state.messages:
 # Only proceed if API key is provided
 if validate_openai_api_key(api_key): 
     os.environ["OPENAI_API_KEY"] = api_key
+    
     sidebar = init_sidebar()
-    
     agent_executor = get_agent()
-    
     # Chat interface
     user_input = st.chat_input("What would you like to know?")
     
@@ -87,8 +85,7 @@ if validate_openai_api_key(api_key):
         
         # Format chat history for context
         chat_history = "No history available."
-        if len(st.session_state.messages[:-1]) > 1:  # If there are previous messages
-            # Only include messages up to but not including the current user message
+        if len(st.session_state.messages[:-1]) > 1:
             chat_history = "\n".join([
                 f"{msg['role'].upper()}: {msg['content']}"
                 for msg in st.session_state.messages[:-1][-sidebar['memory_limit']:]
