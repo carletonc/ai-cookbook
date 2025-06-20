@@ -11,7 +11,7 @@ These are general evaluation prompts to be adapted to any use, and can be extend
 Our tuning prompt is the most formal and rigid, as is necessary for evaluating and improving upon the input prompt.
 """
 
-dummy_data = """
+DUMMY_DATA = """
 Quarter,Revenue ($M),Profit Margin (%),Customer Satisfaction (%),Enterprise Growth (%),Consumer Growth (%)
 Q1 2024,4.1,12.5,85,38,-8
 Q2 2024,4.3,13.1,87,41,-5

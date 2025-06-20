@@ -1,61 +1,23 @@
-# Prompt Tuning & Evaluation Streamlit App
-# -----------------------------------------
-# This app demonstrates iterative prompt tuning using LLM-as-a-judge evaluation loops.
-# It displays the initial prompt, evaluation prompts, and tuning prompt, and allows you to run the tuning loop interactively.
-
 import os
 import json
-from langchain.prompts import PromptTemplate
 from langchain_openai import OpenAI, ChatOpenAI
 from langchain.chains import LLMChain
 import streamlit as st
 
-from constants import DESCRIPTION, dummy_data
-from prompts import (
-    STARTING_PROMPT,
-    FACTUALNESS_AND_ACCURACY,
-    COHERENCE_AND_STRUCTURE,
-    CONCISENESS_AND_INFORMATION_EFFICIENCY,
-    FORMAT_COMPLIANCE,
-    HALLUCINATION_AND_SOURCE_VALIDITY,
-    TUNING_PROMPT
-)
+from constants import DESCRIPTION, DUMMY_DATA
+from utils import validate_openai_api_key, query_llm, reveal_prompts, EVALS
+from prompts import STARTING_PROMPT, TUNING_PROMPT
 
-# List of evaluation prompts (dimensions)
-EVALS = [
-    FACTUALNESS_AND_ACCURACY,
-    COHERENCE_AND_STRUCTURE,
-    CONCISENESS_AND_INFORMATION_EFFICIENCY,
-    FORMAT_COMPLIANCE,
-    HALLUCINATION_AND_SOURCE_VALIDITY
-]
+
+
 min_score = len(EVALS) * 1
 max_score = len(EVALS) * 5
 epochs = 10  # Maximum number of tuning iterations
 
-# --- LLM Query Helper ---
-def query_llm(prompt: str, params: dict) -> str:
-    """
-    Query the LLM with a prompt and parameters.
-    Returns a string output (handles str or list from LLM response).
-    """
-    prompt_template = PromptTemplate(
-        template=prompt,
-        input_variables=list(params.keys())
-    )
-    chain = prompt_template | LLM
-    result = chain.invoke(params).content
-    if isinstance(result, str):
-        return result
-    elif isinstance(result, list):
-        return "\n".join(str(x) for x in result)
-    else:
-        return str(result)
-
 # --- Streamlit UI ---
-st.set_page_config(page_title="Automated Prompt Tuning Demo", layout="wide")
-st.title("Prompt Tuning Demo [WIP]")
-st.warning("Because this is a template and work-in-progress, it is prone to errors.")
+st.set_page_config(page_title="Automated Prompt Tuning Template", layout="wide")
+st.title("Prompt Tuning Template Demo")
+st.warning("NOTICE: This is a template intended to be adapted for external use cases, and may be prone to errors as a result of not have a true dataset to fine-tune on.")
 st.markdown(DESCRIPTION)
 
 # Sidebar for API key
@@ -65,30 +27,8 @@ with st.sidebar:
     os.environ["OPENAI_API_KEY"] = api_key
 
 # Only proceed if API key is provided
-if api_key:
-    # Initialize the language model (OpenAI GPT-4 mini, deterministic)
-    LLM = ChatOpenAI(
-        model="gpt-4.1-mini",
-        temperature=0.0
-    )
-
-    # Show the initial prompt in an expandable section
-    with st.expander("Show Dummy Data"):
-        st.code(dummy_data)
-
-    # Show the initial prompt in an expandable section
-    with st.expander("Show Initial Prompt"):
-        st.code(STARTING_PROMPT)
-
-    # Show all evaluation prompts in an expandable section
-    with st.expander("Show Evaluation Prompts"):
-        for i, eval_prompt in enumerate(EVALS):
-            st.markdown(f"**Eval Prompt {i+1}:**")
-            st.code(eval_prompt)
-            
-    # Show the tuning prompt in an expandable section
-    with st.expander("Show Tuning Prompt"):
-        st.code(TUNING_PROMPT)
+if validate_openai_api_key(api_key):
+    reveal_prompts()
 
     # --- Main Tuning Loop ---
     if st.button("Run Tuning Loop"):
@@ -100,11 +40,11 @@ if api_key:
             st.markdown(f"### Epoch {epoch+1}")
             
             # Generate LLM output for the current prompt
-            output = query_llm(prompt, {"data": dummy_data})
+            output = query_llm(prompt, {"data": DUMMY_DATA})
             
             # Prepare evaluation input
             eval_params = {
-                "input_prompt_and_data": prompt.format(data=dummy_data),
+                "input_prompt_and_data": prompt.format(data=DUMMY_DATA),
                 "output": output
             }
             
@@ -122,7 +62,7 @@ if api_key:
             # Prepare input for the tuning prompt
             tuning_prompt_dict = {
                 "input_prompt": prompt,
-                "data": dummy_data,
+                "data": DUMMY_DATA,
                 "llm_output": output,
                 "llm_evaluations": eval_string
             }
