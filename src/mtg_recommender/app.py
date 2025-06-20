@@ -6,7 +6,7 @@ try:
         import pysqlite3
         sys.modules["sqlite3"] = pysqlite3
 except Exception:
-    # If anything fails, fall back silently — better to run than crash
+    # If anything fails, fall back silently. Better to run than crash.
     pass
 
 import os
@@ -37,6 +37,7 @@ with st.sidebar:
     st.header("Configuration")
     api_key = st.text_input("Enter your OpenAI API Key:", type="password")
 
+# Only proceed if API key is provided
 if validate_openai_api_key(api_key):
     os.environ["OPENAI_API_KEY"] = api_key
     
