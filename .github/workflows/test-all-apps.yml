@@ -18,6 +18,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: List files in workspace
+        run: ls -al
       - name: Make test script executable
         run: chmod +x .test-all-apps.sh
       - name: Run all app tests
