@@ -1,3 +1,14 @@
+# ---  SQLite patch for Streamlit Cloud ---
+try:
+    import sqlite3
+    if sqlite3.sqlite_version_info < (3, 35, 0):
+        import sys
+        import pysqlite3
+        sys.modules["sqlite3"] = pysqlite3
+except Exception:
+    # If anything fails, fall back silently — better to run than crash
+    pass
+
 import os
 import pandas as pd
 import streamlit as st
@@ -8,7 +19,7 @@ from langchain.chains import LLMChain # obsolete
 
 from constants import METADATA_FIELDS
 from utils import load_json_file, load_txt_file, get_vector_store, show_results_table, show_dropdown_details
-from sidebar import init_sidebar
+from sidebar import validate_openai_api_key, init_sidebar
 
 # STREAMLIT APP CONFIGURATION
 st.set_page_config(page_title="MTG Card Search", layout="wide")
@@ -25,9 +36,10 @@ with st.expander("ℹ️ About this app", expanded=False):
 with st.sidebar:
     st.header("Configuration")
     api_key = st.text_input("Enter your OpenAI API Key:", type="password")
-    os.environ["OPENAI_API_KEY"] = api_key
 
-if api_key:
+if validate_openai_api_key(api_key):
+    os.environ["OPENAI_API_KEY"] = api_key
+    
     LLM = ChatOpenAI(
         model="gpt-4.1-mini",
         temperature=0.0

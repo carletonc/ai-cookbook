@@ -3,6 +3,22 @@ from constants import METADATA_FIELDS
 from sidebar_config import TYPES, SUBTYPES, SUPERTYPES, COLORIDENTITY_DICT, LAYOUT
 
 
+def validate_openai_api_key(api_key):
+    """Returns True if the OpenAI API key is valid, False otherwise. Shows a Streamlit warning in the sidebar if invalid, but does nothing if key is None/empty."""
+    if not api_key:
+        # No key entered yet; do not warn
+        return False
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key)
+        # Make a minimal call (list models)
+        client.models.list()
+        return True
+    except Exception:
+        with st.sidebar:
+            st.warning("Invalid OpenAI API key. Please check your key and try again.")
+        return False
+
 def init_sidebar():
     # --- Sidebar filters (after DB is loaded) ---
     with st.sidebar:
