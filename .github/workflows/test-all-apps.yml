@@ -1,0 +1,42 @@
+name: Test All Streamlit Apps
+
+on:
+  push:
+    paths:
+      - '**.py'
+      - '**/requirements.txt'
+      - '.test-all-apps.sh'
+      - '.github/workflows/test-all-apps.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test agent app
+        run: |
+          cd src/agent
+          pip install -r requirements.txt
+          streamlit run app.py --server.headless true --server.port 8501 &
+          AGENT_PID=$!
+          sleep 10
+          kill $AGENT_PID
+      - name: Test prompt_tuning app
+        run: |
+          cd src/prompt_tuning
+          pip install -r requirements.txt
+          streamlit run app.py --server.headless true --server.port 8502 &
+          PROMPT_PID=$!
+          sleep 10
+          kill $PROMPT_PID
+      - name: Test mtg_recommender app
+        run: |
+          cd src/mtg_recommender
+          pip install -r requirements.txt
+          streamlit run app.py --server.headless true --server.port 8503 &
+          MTG_PID=$!
+          sleep 10
+          kill $MTG_PID
