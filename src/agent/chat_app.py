@@ -1,82 +1,35 @@
-"""
-Multi-turn LLM Agent Chat Application
-
-This module implements a Streamlit-based chat interface for interacting with a LangChain agent.
-It supports:
-- Multi-turn conversations with context preservation
-- Configurable model selection and parameters
-- Chat history management and export
-- Agent thought process visualization
-
-Key Components:
-- LangChain agent with custom tools (from tools.py)
-- Streamlit UI with sidebar configuration
-- Session state management for conversation context
-"""
 import os
 import streamlit as st
 from langchain.agents import AgentExecutor, create_react_agent
-# OpenAI expects a plain string and returns a plain string, 
-# uses v1/completions and models such as `text-davinci-003`
-# ChatOpenAI expects a plain string and returns a plain string, 
-# uses v1/chat/completions and models such as `gpt-4.1-mini`
 from langchain_openai import OpenAI, ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
-from typing import Dict, List
-from pydantic import SecretStr
 
 from constants import HEADER, DESCRIPTION, SYSTEM_PROMPT
 from tools import tools
+from utils import validate_openai_api_key, init_sidebar
 
-from dotenv import load_dotenv
-
-load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-# Page configuration
-st.set_page_config(page_title="Multi-turn LLM Agent Demo", layout="wide")
-st.title("🤖 Multi-turn LLM Agent")
-
-# Initialize session state for chat history and context
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-    
-if "conversation_context" not in st.session_state:
-    st.session_state.conversation_context = {
-        "topics": set(),
-        "last_input": None,
-        "agent_memory": []
-    }
-
-# Sidebar for configuration
-with st.sidebar:
-    st.header("Configuration")
-    api_key = st.text_input("Enter your OpenAI API Key:", type="password")
-    os.environ["OPENAI_API_KEY"] = api_key
-    
-    # Add model selection
-    model_options = ["gpt-4.1-mini", "gpt-3.5-turbo"]
-    selected_model = st.selectbox("Select Model:", model_options, index=0)
-    
-    # Add temperature control
-    temperature = st.slider("Temperature:", min_value=0.0, max_value=1.0, value=0.3, step=0.1)
-    memory_history_limit = st.number_input("Memory Limit:", min_value=1, max_value=100, value=10, step=1)
-    
-    st.markdown("### Current System Prompt:")
-    st.info(SYSTEM_PROMPT)
-
-# Main content area
-st.header(HEADER)
-st.markdown(DESCRIPTION)
-
-# Display chat history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+def get_agent():
+    """Create and return an agent executor for multi-turn LLM agent."""
+    agent_prompt = PromptTemplate(
+        input_variables=["input", "tool_names", "chat_history"], 
+        template=SYSTEM_PROMPT + "\nPrevious conversation:\n{chat_history}\n"
+    )
+    llm = ChatOpenAI(
+        model=sidebar['model'], 
+        temperature=sidebar['temperature'] 
+    )
+    agent = create_react_agent(llm, tools, agent_prompt)
+    agent_executor = AgentExecutor(
+        agent=agent, 
+        tools=tools, 
+        verbose=True, 
+        handle_parsing_errors=True
+    )
+    return agent_executor
 
 def update_context(user_input: str, response: str) -> None:
-    """Update conversation context with new information"""
+    """Update conversation context with new user input and agent response."""
     st.session_state.conversation_context["topics"].add(user_input[:50])
     st.session_state.conversation_context["last_input"] = user_input
     st.session_state.conversation_context["agent_memory"].append({
@@ -84,24 +37,43 @@ def update_context(user_input: str, response: str) -> None:
         "response": response
     })
 
-# Only proceed if API key is provided
-if api_key:    
-    # Agent prompt with context
-    agent_prompt = PromptTemplate(
-        input_variables=["input", "tool_names", "chat_history"], 
-        template=SYSTEM_PROMPT + "\nPrevious conversation:\n{chat_history}\n"
-    )
+def initialize_session_state():
+    """Initialize session state for chat history and context if not already set."""
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    if "conversation_context" not in st.session_state:
+        st.session_state.conversation_context = {
+            "topics": set(),
+            "last_input": None,
+            "agent_memory": []
+        }
 
-    # Create the agent with proper typing for API key
-    api_key_str = os.environ.get("OPENAI_API_KEY")
-    llm = ChatOpenAI(
-        api_key=SecretStr(api_key_str) if api_key_str else None,
-        model=selected_model, 
-        temperature=temperature
-    )
-    agent = create_react_agent(llm, tools, agent_prompt)
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
+# Page configuration
+st.set_page_config(page_title="Multi-turn LLM Agent Demo", layout="wide")
+st.title("🤖 Multi-turn LLM Agent")
+
+with st.sidebar:
+    st.header("Configuration")
+    api_key = st.text_input("Enter your OpenAI API Key:", type="password")
+
+# Main content area
+st.header(HEADER)
+st.markdown(DESCRIPTION)
+
+# Initialize session state for chat history and context
+initialize_session_state()
+
+# Display chat history
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Only proceed if API key is provided
+if validate_openai_api_key(api_key): 
+    os.environ["OPENAI_API_KEY"] = api_key
     
+    sidebar = init_sidebar()
+    agent_executor = get_agent()
     # Chat interface
     user_input = st.chat_input("What would you like to know?")
     
@@ -113,11 +85,10 @@ if api_key:
         
         # Format chat history for context
         chat_history = "No history available."
-        if len(st.session_state.messages[:-1]) > 1:  # If there are previous messages
-            # Only include messages up to but not including the current user message
+        if len(st.session_state.messages[:-1]) > 1:
             chat_history = "\n".join([
                 f"{msg['role'].upper()}: {msg['content']}"
-                for msg in st.session_state.messages[:-1][-memory_history_limit:]
+                for msg in st.session_state.messages[:-1][-sidebar['memory_limit']:]
             ])
         
         with st.chat_message("assistant"):

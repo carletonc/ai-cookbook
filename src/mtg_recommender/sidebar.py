@@ -3,14 +3,30 @@ from constants import METADATA_FIELDS
 from sidebar_config import TYPES, SUBTYPES, SUPERTYPES, COLORIDENTITY_DICT, LAYOUT
 
 
+def validate_openai_api_key(api_key):
+    """Check if the OpenAI API key is valid. Returns True if valid, False otherwise. Shows a warning in the sidebar if invalid."""
+    if not api_key:
+        # No key entered yet; do not warn
+        return False
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key)
+        # Make a minimal call (list models)
+        client.models.list()
+        return True
+    except Exception:
+        with st.sidebar:
+            st.warning("Invalid OpenAI API key. Please check your key and try again.")
+        return False
+
 def init_sidebar():
+    """Render sidebar UI for filters and search settings. Returns number of results and Chroma filter dict."""
     # --- Sidebar filters (after DB is loaded) ---
     with st.sidebar:
         st.header("Filters & Search Settings [WIP]")
         
         # Number of results at the top
         k = st.number_input("Number of Results", min_value=1, max_value=40, value=10, step=1)
-        
         st.markdown("---")  # Divider
         
         # Initialize filter values dictionary
@@ -21,7 +37,6 @@ def init_sidebar():
         filter_values['types'] = st.multiselect(METADATA_FIELDS['types']['display_name'], TYPES, accept_new_options=False)
         filter_values['subtypes'] = st.multiselect(METADATA_FIELDS['subtypes']['display_name'], SUBTYPES, accept_new_options=False)
         filter_values['supertypes'] = st.multiselect(METADATA_FIELDS['supertypes']['display_name'], SUPERTYPES, accept_new_options=False)
-        
         st.markdown("---")
         
         # Mana and Color filters
@@ -29,7 +44,6 @@ def init_sidebar():
         filter_values['manaValue'] = st.text_input(METADATA_FIELDS['manaValue']['display_name'], "")
         filter_values['colorIdentity'] = st.multiselect(METADATA_FIELDS['colorIdentity']['display_name'], list(COLORIDENTITY_DICT.keys()), accept_new_options=False)
         filter_values['layout'] = st.multiselect(METADATA_FIELDS['layout']['display_name'], LAYOUT, accept_new_options=False)
-        
         st.markdown("---")
         
         # Commander-specific filters
@@ -45,13 +59,11 @@ def init_sidebar():
             index=0
         )
         
-    # Chroma filter dict from filter_values
+    # Chroma filter dict from filter_values / WIP
     chroma_filter = {}
     for key, val in filter_values.items():
         if val == "Any" or val == "":
             continue
-        
-        # Only process 'types' filter for testing
         elif key in ['types', 'subtypes', 'supertypes', 'layout']:
             if val:
                 chroma_filter[key] = {"$in": val}
@@ -61,7 +73,6 @@ def init_sidebar():
         elif key == 'colorIdentity':
             if val:
                 chroma_filter[key] = {"$in": [COLORIDENTITY_DICT[v] for v in val]}
-                
     if len(chroma_filter) > 1:
         chroma_filter = {"$and": [{k:v} for k,v in chroma_filter.items()]}
     

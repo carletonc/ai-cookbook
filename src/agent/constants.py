@@ -1,4 +1,3 @@
-# UI Constants
 HEADER = "Ask me anything!"
 
 DESCRIPTION = """

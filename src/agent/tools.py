@@ -1,13 +1,3 @@
-"""
-LangChain Agent Tools
-
-This module defines the tools available to the LangChain agent:
-1. Web Search - Uses DuckDuckGo for current information
-2. Wikipedia - Retrieves detailed background information
-3. Calculator - Uses LLM for step-by-step math problem solving
-
-Each tool is implemented as a LangChain Tool with a specific description and function.
-"""
 import os
 from langchain_openai import OpenAI 
 from langchain.chains import LLMChain
@@ -15,14 +5,12 @@ from langchain.prompts import PromptTemplate
 from langchain.tools import Tool
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_community.utilities import WikipediaAPIWrapper
-from pydantic import SecretStr
-
 from dotenv import load_dotenv
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Tool 1: Web search
+# Web search tool
 search = DuckDuckGoSearchRun()
 search_tool = Tool(
     name="Web Search",
@@ -33,7 +21,7 @@ search_tool = Tool(
     """
 )
 
-# Tool 2: Wikipedia
+# Wikipedia tool
 wikipedia = WikipediaAPIWrapper()
 wikipedia_tool = Tool(
     name="Wikipedia",
@@ -44,7 +32,7 @@ wikipedia_tool = Tool(
     """
 )
 
-# Tool 3: Calculator via LLM
+# Calculator tool
 def create_calculator_chain():
     """Create and return the calculator chain with proper API key handling"""
     calculator_template = """
@@ -55,7 +43,7 @@ def create_calculator_chain():
     calculator_prompt = PromptTemplate(template=calculator_template, input_variables=["query"])
     api_key_str = os.environ.get("OPENAI_API_KEY")
     calculator_llm = OpenAI(
-        api_key=SecretStr(api_key_str) if api_key_str else None,
+        api_key=api_key_str,
         temperature=0
     )
     return calculator_prompt | calculator_llm
