@@ -31,11 +31,6 @@ if validate_openai_api_key(api_key):
     # Initialize session state for chat history and context
     initialize_session_memory()
     
-    # Display chat history
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-    
     # Chat interface
     user_input = st.chat_input("What would you like to know?")
     
@@ -68,6 +63,11 @@ if validate_openai_api_key(api_key):
                 except Exception as e:
                     # PLACEHOLDER - need to implement agent retry logic here
                     st.error(f"An error occurred: {str(e)}")
+    else:    
+        # Display chat history
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
     initialize_conversation_management_buttons()
         
