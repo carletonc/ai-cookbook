@@ -9,8 +9,8 @@ from utils.memory import initialize_session_memory, update_context, append_assis
 
 
 # Page configuration
-st.set_page_config(page_title="Multi-turn LLM Agent Demo", layout="wide")
-st.title("🤖 Multi-turn LLM Agent")
+st.set_page_config(page_title="Chat Agent Demo", layout="wide")
+st.title("🤖 Chat Agent")
 
 with st.sidebar:
     st.header("Configuration")
