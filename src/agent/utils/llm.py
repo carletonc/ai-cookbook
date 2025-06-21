@@ -1,6 +1,10 @@
 import streamlit as st
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain_openai import OpenAI, ChatOpenAI
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
 
-from constants import SYSTEM_PROMPT
+from .constants import SYSTEM_PROMPT
 
 def validate_openai_api_key(api_key):
     """Check if the OpenAI API key is valid. Returns True if valid, False otherwise. Shows a warning in the sidebar if invalid."""
@@ -19,7 +23,7 @@ def validate_openai_api_key(api_key):
         return False
     
 # Sidebar for configuration
-def init_sidebar():
+def initialize_sidebar():
     """Render sidebar UI for model selection and agent configuration. Returns selected model, temperature, and memory limit."""
     with st.sidebar:
         # Add model selection
@@ -35,3 +39,22 @@ def init_sidebar():
             'temperature': temperature, 
             'memory_limit': memory_history_limit
         }
+
+def get_agent(sidebar: dict, tools: list) -> AgentExecutor:
+    """Create and return an agent executor for multi-turn LLM agent."""
+    agent_prompt = PromptTemplate(
+        input_variables=["input", "tool_names", "chat_history"], 
+        template=SYSTEM_PROMPT + "\nPrevious conversation:\n{chat_history}\n"
+    )
+    llm = ChatOpenAI(
+        model=sidebar['model'], 
+        temperature=sidebar['temperature'] 
+    )
+    agent = create_react_agent(llm, tools, agent_prompt)
+    agent_executor = AgentExecutor(
+        agent=agent, 
+        tools=tools, 
+        verbose=True, 
+        handle_parsing_errors=True
+    )
+    return agent_executor
