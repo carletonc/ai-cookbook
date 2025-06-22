@@ -26,7 +26,6 @@ with st.sidebar:
 # Main content area
 st.header(HEADER)
 st.markdown(DESCRIPTION)
-st.write(st.session_state)
 
 # Only proceed if API key is provided
 if validate_openai_api_key(api_key): 
