@@ -1,14 +1,11 @@
-import os
 from langchain_openai import OpenAI 
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.tools import Tool
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_community.utilities import WikipediaAPIWrapper
-from dotenv import load_dotenv
 
-load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 
 # Web search tool
 search = DuckDuckGoSearchRun()
@@ -41,9 +38,7 @@ def create_calculator_chain():
     Solve this step by step until you reach the final answer.
     """
     calculator_prompt = PromptTemplate(template=calculator_template, input_variables=["query"])
-    api_key_str = os.environ.get("OPENAI_API_KEY")
     calculator_llm = OpenAI(
-        api_key=api_key_str,
         temperature=0
     )
     return calculator_prompt | calculator_llm

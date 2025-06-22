@@ -4,7 +4,14 @@ import streamlit as st
 from utils.constants import HEADER, DESCRIPTION, SYSTEM_PROMPT
 from utils.tools import tools
 from utils.llm import validate_openai_api_key, initialize_sidebar, get_agent
-from utils.memory import initialize_session_memory, update_context, append_assistant_response, update_memory_history, initialize_conversation_management_buttons
+from utils.memory import (
+    initialize_session_memory, 
+    append_assistant_response, 
+    update_memory_history, 
+    rollback_last_user_message, 
+    display_chat_history, 
+    initialize_conversation_management_buttons
+)
 
 
 
@@ -19,23 +26,21 @@ with st.sidebar:
 # Main content area
 st.header(HEADER)
 st.markdown(DESCRIPTION)
-
+st.write(st.session_state)
 
 # Only proceed if API key is provided
 if validate_openai_api_key(api_key): 
     os.environ["OPENAI_API_KEY"] = api_key
     
-    sidebar = initialize_sidebar()
-    agent_executor = get_agent(sidebar, tools)
+    initialize_sidebar()
+    agent_executor = get_agent(tools)
     
     # Initialize session state for chat history and context
     initialize_session_memory()
     
     # Chat interface
-    user_input = st.chat_input("What would you like to know?")
-    
-    if user_input:        
-        chat_history = update_memory_history(user_input, sidebar['memory_limit'])
+    if user_input := st.chat_input("What would you like to know?"): 
+        chat_history = update_memory_history(user_input)
         
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
@@ -53,21 +58,16 @@ if validate_openai_api_key(api_key):
                     # Add assistant's response to chat history
                     append_assistant_response(response["output"])
                     
-                    # Update conversation context
-                    update_context(user_input, response["output"])
-                    
                     # Show thought process in expander
                     with st.expander("View agent's thought process"):
-                        st.write(str(response))
+                        st.json(response)
                 
                 except Exception as e:
-                    # PLACEHOLDER - need to implement agent retry logic here
+                    # PLACEHOLDER - need to replace rollback logic with agent retry logic here
+                    rollback_last_user_message()
                     st.error(f"An error occurred: {str(e)}")
     else:    
-        # Display chat history
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+        display_chat_history()
 
     initialize_conversation_management_buttons()
         
