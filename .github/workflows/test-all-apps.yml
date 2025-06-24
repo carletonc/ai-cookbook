@@ -18,7 +18,7 @@ jobs:
           python-version: '3.11'
       - name: Test agent app
         run: |
-          cd src/agent
+          cd apps/agent
           pip install -r requirements.txt
           streamlit run app.py --server.headless true --server.port 8501 &
           AGENT_PID=$!
@@ -26,7 +26,7 @@ jobs:
           kill $AGENT_PID
       - name: Test prompt_tuning app
         run: |
-          cd src/prompt_tuning
+          cd apps/prompt_tuning
           pip install -r requirements.txt
           streamlit run app.py --server.headless true --server.port 8502 &
           PROMPT_PID=$!
@@ -34,7 +34,7 @@ jobs:
           kill $PROMPT_PID
       - name: Test mtg_recommender app
         run: |
-          cd src/mtg_recommender
+          cd apps/mtg_recommender
           pip install -r requirements.txt
           streamlit run app.py --server.headless true --server.port 8503 &
           MTG_PID=$!
