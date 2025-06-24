@@ -3,8 +3,8 @@ from langchain.prompts import PromptTemplate
 from langchain_openai import OpenAI, ChatOpenAI
 from langchain.chains import LLMChain
 
-from constants import DUMMY_DATA
-from prompts import (
+from .constants import DUMMY_DATA
+from .prompts import (
     STARTING_PROMPT,
     FACTUALNESS_AND_ACCURACY,
     COHERENCE_AND_STRUCTURE,

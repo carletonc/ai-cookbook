@@ -1,6 +1,6 @@
 import streamlit as st
-from constants import METADATA_FIELDS
-from sidebar_config import TYPES, SUBTYPES, SUPERTYPES, COLORIDENTITY_DICT, LAYOUT
+from .constants import METADATA_FIELDS
+from .sidebar_config import TYPES, SUBTYPES, SUPERTYPES, COLORIDENTITY_DICT, LAYOUT
 
 
 

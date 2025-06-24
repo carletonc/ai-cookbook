@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.ui import (
+from src.ui import (
     select_csv_file,
     load_data,
     record_navigation,
