@@ -1,5 +1,5 @@
 # DISCLAIMER!
-### This work is not my own. The below README.md and files attached are originally from Shaw Talebi. I found this streamlit app to be so useful that I had to add it to my own repo so I could easily reference it, and modify it for my own use cases. 
+### This work is not my own. The below README.md and files attached are originally from Shaw Talebi. I stumbled upon his youtube channel and found this streamlit app to be so useful that I had to add it to my own repo so I could easily reference it, and modify it for my own use cases. The current state of this repo rearranges Shaw's original code for cleaner organization, but will be modified further to ingest a CSV and export an annotated JSON or CSV. Further, inputs, outputs, and annotations labels will be analyzed by a LLM to come up with labels to analyze error types for iterations. I intend this app to be applicable to any error analysis -- ML or LLMs.
 
 # How to Improve AI Apps with Error Analysis
 Example code for LLM error analysis of LinkedIn Ghostwriter.
