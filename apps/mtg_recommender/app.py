@@ -23,7 +23,7 @@ from src.sidebar import validate_openai_api_key, init_sidebar
 
 # STREAMLIT APP CONFIGURATION
 st.set_page_config(page_title="MTG Card Search", layout="wide")
-st.title("🤖 MTG Card Search")
+st.title("🧙‍♂️ Magic: The Gathering Card Search")
 
 # Read and display README content
 readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
