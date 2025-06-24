@@ -4,9 +4,9 @@ from langchain_openai import OpenAI, ChatOpenAI
 from langchain.chains import LLMChain
 import streamlit as st
 
-from constants import DESCRIPTION, DUMMY_DATA
-from utils import validate_openai_api_key, query_llm, reveal_prompts, EVALS
-from prompts import STARTING_PROMPT, TUNING_PROMPT
+from src.constants import DESCRIPTION, DUMMY_DATA
+from src.utils import validate_openai_api_key, query_llm, reveal_prompts, EVALS
+from src.prompts import STARTING_PROMPT, TUNING_PROMPT
 
 
 
