@@ -3,6 +3,7 @@ from constants import METADATA_FIELDS
 from sidebar_config import TYPES, SUBTYPES, SUPERTYPES, COLORIDENTITY_DICT, LAYOUT
 
 
+
 def validate_openai_api_key(api_key):
     """Check if the OpenAI API key is valid. Returns True if valid, False otherwise. Shows a warning in the sidebar if invalid."""
     if not api_key:
