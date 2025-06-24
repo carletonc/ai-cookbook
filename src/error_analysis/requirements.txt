@@ -1,0 +1,7 @@
+#python==3.11.4 # commented out for compatability with streamlit cloud
+streamlit==1.45.1
+#langchain==0.3.25
+#langchain-openai==0.3.23
+openai==1.88.0
+python-dotenv==1.1.0
+pandas==2.3.0
