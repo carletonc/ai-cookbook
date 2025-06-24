@@ -17,9 +17,9 @@ from langchain_openai import OpenAI, ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain # obsolete
 
-from constants import METADATA_FIELDS
-from utils import load_json_file, load_txt_file, get_vector_store, show_results_table, show_dropdown_details
-from sidebar import validate_openai_api_key, init_sidebar
+from src.constants import METADATA_FIELDS
+from src.utils import load_json_file, load_txt_file, get_vector_store, show_results_table, show_dropdown_details
+from src.sidebar import validate_openai_api_key, init_sidebar
 
 # STREAMLIT APP CONFIGURATION
 st.set_page_config(page_title="MTG Card Search", layout="wide")

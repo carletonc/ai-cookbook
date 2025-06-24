@@ -1,23 +1,23 @@
 import ast
-import os
 import json
 import requests
 import pandas as pd
 import streamlit as st
+from pathlib import Path
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
 #from langchain_community.vectorstores import Chroma
 from langchain.schema import Document
-from constants import METADATA_FIELDS
+from .constants import METADATA_FIELDS
 
 # Constants for file paths and data locations
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FOLDER = "data"
+SCRIPT_DIR = Path(__file__).resolve().parent.parent
+DATA_FOLDER = SCRIPT_DIR / "data"
 CARDS_FILE = "AtomicCards.json"
 RULES_FILE = "MagicCompRules_21031101.txt"
-JSON_PATH = os.path.join(SCRIPT_DIR, DATA_FOLDER, CARDS_FILE)
-TXT_PATH = os.path.join(SCRIPT_DIR, DATA_FOLDER, RULES_FILE)
-PERSIST_PATH = os.path.join(SCRIPT_DIR, DATA_FOLDER, "chroma_db")
+JSON_PATH = DATA_FOLDER / CARDS_FILE
+TXT_PATH = DATA_FOLDER / RULES_FILE
+PERSIST_PATH = DATA_FOLDER / "chroma_db"
 
 
 def fetch_mtg_rules():
@@ -27,14 +27,14 @@ def fetch_mtg_rules():
     response = requests.get(url)
     response.raise_for_status()
     text = response.text
-    os.makedirs(os.path.dirname(TXT_PATH), exist_ok=True)
+    TXT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(TXT_PATH, "w") as f:
         f.write(text)
 
 
 def load_txt_file():
     """Load the MTG rules from file, or download if missing. Returns rules as a string."""
-    if os.path.exists(TXT_PATH):
+    if TXT_PATH.exists():
         with open(TXT_PATH, "r") as f:
             data = f.read()
         return data
@@ -51,7 +51,7 @@ def fetch_mtgjson_data():
     response = requests.get(url)
     response.raise_for_status()
     data = response.json()
-    os.makedirs(os.path.dirname(JSON_PATH), exist_ok=True)
+    JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(JSON_PATH, "w") as f:
         json.dump(data, f)
 
@@ -104,7 +104,7 @@ def transform_card_data(data):
 
 def load_json_file():
     """Load or fetch MTG card data and return as a normalized DataFrame."""
-    if os.path.exists(JSON_PATH):
+    if JSON_PATH.exists():
         with open(JSON_PATH, "r") as f:
             data = json.load(f)["data"]
         return transform_card_data(data)
@@ -159,7 +159,7 @@ def build_vectorstore(df, persist_path=PERSIST_PATH, collection_name="mtg-poc", 
                 documents=batch,
                 embedding=embeddings,
                 collection_name=collection_name,
-                persist_directory=persist_path
+                persist_directory=str(persist_path)
             )
         else:
             vectorstore.add_documents(batch)
@@ -182,9 +182,9 @@ def get_vector_store():
     )
     
     # Check if vectorstore exists
-    if os.path.exists(PERSIST_PATH):
+    if PERSIST_PATH.exists():
         return Chroma(
-            persist_directory=PERSIST_PATH,
+            persist_directory=str(PERSIST_PATH),
             embedding_function=embeddings,
             collection_name="mtg-poc"
         )
