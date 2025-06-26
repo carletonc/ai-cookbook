@@ -1,7 +1,7 @@
 HEADER = "Ask me anything!"
 
 DESCRIPTION = """
-This is a simple chat agent I have built for my own practical understanding of how to use LangChain and OpenAI's. The core LLM leverages the ReAct prompt framework, has short-term memory, and access to a handful of tools including DuckDuckGo Web Search, Wikipedia look up, and a Chain-of-Thought calculator to offload complex math problems.
+This is a simple chat agent I have built for my own practical understanding of how to use LangChain and OpenAI APIs. The core LLM leverages the ReAct prompt framework, has short-term memory, and access to a handful of tools including DuckDuckGo Web Search, Wikipedia look up, and a Chain-of-Thought calculator to offload complex math problems.
 
 Practical & Potential Next Steps:
 - Define a dataset to evaluate the agent's performance across various tasks, specifically tool calling accuracy, and refining prompts.
