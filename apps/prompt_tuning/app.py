@@ -5,7 +5,7 @@ from langchain.chains import LLMChain
 import streamlit as st
 
 from src.constants import DESCRIPTION, DUMMY_DATA
-from src.utils import validate_openai_api_key, query_llm, reveal_prompts, EVALS
+from src.utils import validate_openai_api_key, query_llm, render_prompts, EVALS
 from src.prompts import STARTING_PROMPT, TUNING_PROMPT
 
 
@@ -16,8 +16,8 @@ epochs = 10  # Maximum number of tuning iterations
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="Automated Prompt Tuning Template", layout="wide")
-st.title("Prompt Tuning Template Demo")
-st.warning("NOTICE: This is a template intended to be adapted for external use cases, and may be prone to errors as a result of not have a true dataset to fine-tune on.")
+st.title("Prompt Tuning  Demo")
+st.warning("This is a generalized proof-of-concept intended to be adapted for external use cases. As a product of it's generalization, it may be prone to errors.")
 st.markdown(DESCRIPTION)
 
 # Sidebar for API key
@@ -28,7 +28,7 @@ with st.sidebar:
 
 # Only proceed if API key is provided
 if validate_openai_api_key(api_key):
-    reveal_prompts()
+    render_prompts()
 
     # --- Main Tuning Loop ---
     if st.button("Run Tuning Loop"):

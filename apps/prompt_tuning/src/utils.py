@@ -23,7 +23,7 @@ EVALS = [
     HALLUCINATION_AND_SOURCE_VALIDITY
 ]
 
-def validate_openai_api_key(api_key):
+def validate_openai_api_key(api_key: str) -> bool:
     """Check if the OpenAI API key is valid. Returns True if valid, False otherwise. Shows a warning in the sidebar if invalid."""
     if not api_key:
         # No key entered yet; do not warn
@@ -62,7 +62,7 @@ def query_llm(prompt: str, params: dict) -> str:
     else:
         return str(result)
     
-def reveal_prompts():
+def render_prompts():
     """Display all prompts and dummy data in expandable sections in the UI."""
     # Show the initial prompt in an expandable section
     with st.expander("Show Dummy Data"):
