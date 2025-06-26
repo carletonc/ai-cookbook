@@ -19,7 +19,7 @@ early_stopping = True
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="Automated Prompt Tuning Template", layout="wide")
-st.title("Prompt Tuning  Demo")
+st.title("🪄 Prompt Tuning Demo")
 st.warning("This is a generalized proof-of-concept intended to be adapted for external use cases. As a product of it's generalization, it may be prone to errors.")
 st.markdown(DESCRIPTION)
 
