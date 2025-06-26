@@ -24,7 +24,6 @@ with st.sidebar:
     api_key = st.text_input("Enter your OpenAI API Key:", type="password")
 
 # Main content area
-st.header(HEADER)
 st.markdown(DESCRIPTION)
 
 # Only proceed if API key is provided
