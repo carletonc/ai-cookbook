@@ -1,7 +1,7 @@
 import os
 import streamlit as st
 
-from src.constants import HEADER, DESCRIPTION, SYSTEM_PROMPT
+from src.constants import DESCRIPTION, SYSTEM_PROMPT
 from src.tools import tools
 from src.llm import validate_openai_api_key, initialize_sidebar, get_agent
 from src.memory import (
