@@ -1,10 +1,14 @@
 HEADER = "Ask me anything!"
 
 DESCRIPTION = """
-This agent has access to various tools to help answer your questions:
-- DuckDuckGo Web Search
-- Wikipedia Look Up
-- A calculator for math problems
+This is a simple chat agent I have built for my own practical understanding of how to use LangChain and OpenAI's. The core LLM leverages the ReAct prompt framework, has short-term memory, and access to a handful of tools including DuckDuckGo Web Search, Wikipedia look up, and a Chain-of-Thought calculator to offload complex math problems.
+
+Practical & Potential Next Steps:
+- Define a dataset to evaluate the agent's performance across various tasks, specifically tool calling accuracy, and refining prompts.
+- Implement observability to de-bug the agent's thought sequences.
+- Fallback logic for when DuckDuckGo's API limits are reached
+- Long-Term Memory and [better] Short-Term Memory
+- Document upload & analysis (requiring RAG -- OCR, chunking, vectorDB, memory, etc.)
 """
 
 # Agent Configuration
