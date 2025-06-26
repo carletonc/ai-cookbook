@@ -36,6 +36,7 @@ def create_calculator_chain():
     You are a calculator. You can solve math problems.
     The problem is: {query}
     Think step by step until you reach the final answer.
+    Your final response should be the answer to the math problem, without any additional text.
     """
     calculator_prompt = PromptTemplate(template=calculator_template, input_variables=["query"])
     calculator_llm = OpenAI(
