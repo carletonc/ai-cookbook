@@ -54,7 +54,7 @@ if validate_openai_api_key(api_key):
                 evals = [[e, query_llm(e, eval_params)] for e in EVALS]
                 scores = [json.loads(e[1]) for e in evals]
                 # Show evaluation scores in a table
-                score_table = {f"Eval {i+1}": s for i, s in enumerate(scores)}
+                score_table = [{"eval #":i, **s} for i, s in enumerate(scores)]
                 st.dataframe(score_table, use_container_width=True)
                 # Format evaluation results for the tuning prompt
                 eval_string = "\n\n".join([
