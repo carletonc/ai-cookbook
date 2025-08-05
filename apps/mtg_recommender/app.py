@@ -12,14 +12,11 @@ except Exception:
 import os
 import pandas as pd
 import streamlit as st
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain_openai import OpenAI, ChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain # obsolete
 
 from src.constants import METADATA_FIELDS
-from src.utils import load_json_file, load_txt_file, get_vector_store, show_results_table, show_dropdown_details
+from src.utils import load_json_file, load_txt_file, get_vector_store
 from src.sidebar import validate_openai_api_key, init_sidebar
+from src.llm import get_agent, get_context
 
 # STREAMLIT APP CONFIGURATION
 st.set_page_config(page_title="MTG Card Search", layout="wide")
@@ -39,28 +36,19 @@ with st.sidebar:
 
 # Only proceed if API key is provided
 if validate_openai_api_key(api_key):
-    os.environ["OPENAI_API_KEY"] = api_key
-    
-    LLM = ChatOpenAI(
-        model="gpt-4.1-mini",
-        temperature=0.0
-    )    
+    os.environ["OPENAI_API_KEY"] = api_key  
 
     rules = load_txt_file()
     # card_df = load_json_file()
     
     vectorstore = get_vector_store()
+    # currently irrelevant
     k, chroma_filter = init_sidebar()
 
     query = st.text_input("Enter your card search query:")
 
     if query:
-        # Use similarity_search_with_score directly with filter
-        results = vectorstore.similarity_search_with_score(
-            query,
-            k=int(k),
-            filter=chroma_filter if chroma_filter else None
-        )
-        
-        show_results_table(results)
-        show_dropdown_details(results)
+        context = get_context(query, K=st.session_state.get('k', 100)) #
+        response = get_agent(query, context)
+        st.markdown(response)
+
