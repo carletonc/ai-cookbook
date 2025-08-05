@@ -19,7 +19,7 @@ from src.sidebar import validate_openai_api_key, init_sidebar
 from src.llm import get_agent, get_context
 
 # STREAMLIT APP CONFIGURATION
-st.set_page_config(page_title="MTG Card Search", layout="wide")
+st.set_page_config(page_title="MTG Card Search w/RAG", layout="wide")
 st.title("🧙‍♂️ Magic: The Gathering Card Search")
 
 # Read and display README content
