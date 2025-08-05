@@ -43,7 +43,7 @@ if validate_openai_api_key(api_key):
     
     vectorstore = get_vector_store()
     # currently irrelevant
-    k, chroma_filter = init_sidebar()
+    chroma_filter = init_sidebar()
 
     query = st.text_input("Enter your card search query:")
 
