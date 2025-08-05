@@ -24,10 +24,10 @@ def init_sidebar():
     """Render sidebar UI for filters and search settings. Returns number of results and Chroma filter dict."""
     # --- Sidebar filters (after DB is loaded) ---
     with st.sidebar:
-        st.header("Filters & Search Settings [WIP]")
+        st.header("Filters & Search Settings [WIP - not functioning]")
         
         # Number of results at the top
-        k = st.number_input("Number of Results", min_value=1, max_value=40, value=10, step=1)
+        st.session_state['k'] = st.number_input("Number of Results", min_value=1, max_value=500, value=100, step=1)
         st.markdown("---")  # Divider
         
         # Initialize filter values dictionary
@@ -113,4 +113,4 @@ def init_sidebar():
             chroma_filter[key] = val
     '''
             
-    return k, chroma_filter
+    return chroma_filter
