@@ -7,7 +7,7 @@ from pprint import pprint
 from dotenv import load_dotenv
 load_dotenv() 
 
-from src.data.utils import get_vector_store
+from src.db.utils import get_vector_store
 
 MODEL = "gpt-4.1-nano" # "gpt-4.1-mini", "gpt-3.5-turbo"
 TEMPERATURE = 0.5
@@ -41,7 +41,7 @@ def get_context(
     feats: list = ['name', 'text', 'type', 'power', 'toughness', 'manaCost', 'colorIdentity', 'legalities.commander']
     ) -> str:
     vectorstore = get_vector_store()
-    results = vectorstore.(
+    results = vectorstore(
         user_input, 
         k=K, 
     )

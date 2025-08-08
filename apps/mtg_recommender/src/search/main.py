@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from dotenv import load_dotenv
 load_dotenv()
 
-from src.data.utils import get_vector_store
+from src.db.utils import get_vector_store
 
 vectordb = get_vector_store()
 
