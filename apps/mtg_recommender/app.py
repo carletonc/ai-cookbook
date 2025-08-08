@@ -14,9 +14,9 @@ import pandas as pd
 import streamlit as st
 
 from src.constants import METADATA_FIELDS
-from src.utils import load_json_file, load_txt_file, get_vector_store
-from src.sidebar import validate_openai_api_key, init_sidebar
-from src.llm import get_agent, get_context
+from src.data.utils import load_json_file, load_txt_file, get_vector_store
+from src.ui.main import validate_openai_api_key, init_sidebar
+from src.llm import query_llm, get_context
 
 # STREAMLIT APP CONFIGURATION
 st.set_page_config(page_title="MTG Card Search w/RAG", layout="wide")
@@ -49,6 +49,5 @@ if validate_openai_api_key(api_key):
 
     if query:
         context = get_context(query, K=st.session_state.get('k', 100)) #
-        response = get_agent(query, context)
+        response = query_llm(query, context)
         st.markdown(response)
-
