@@ -41,7 +41,7 @@ def get_context(
     feats: list = ['name', 'text', 'type', 'power', 'toughness', 'manaCost', 'colorIdentity', 'legalities.commander']
     ) -> str:
     vectorstore = get_vector_store()
-    results = vectorstore.similarity_search_by_vector_with_score(
+    results = vectorstore.similarity_search(
         user_input, 
         k=K, 
     )
