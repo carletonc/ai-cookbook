@@ -41,7 +41,7 @@ def get_context(
     feats: list = ['name', 'text', 'type', 'power', 'toughness', 'manaCost', 'colorIdentity', 'legalities.commander']
     ) -> str:
     vectorstore = get_vector_store()
-    results = vectorstore.(
+    results = vectorstore(
         user_input, 
         k=K, 
     )

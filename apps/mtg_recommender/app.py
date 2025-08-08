@@ -19,8 +19,8 @@ from src.ui.main import validate_openai_api_key, init_sidebar
 from src.llm import query_llm, get_context
 
 # STREAMLIT APP CONFIGURATION
-st.set_page_config(page_title="MTG Card Search w/RAG", layout="wide")
-st.title("🧙‍♂️ Magic: The Gathering Card Search")
+st.set_page_config(page_title="AI MTG Card Search", layout="wide")
+st.title("🧙‍♂️ AI Magic: The Gathering Card Search")
 
 # Read and display README content
 readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
