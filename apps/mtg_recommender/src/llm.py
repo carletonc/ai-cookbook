@@ -45,11 +45,11 @@ def get_context(
         user_input, 
         k=K, 
     )
-    
     # filter for results & merge metadata
-    context = '|'.join(feats) + '\n' + '\n'.join(
+    header = '|'.join(feats) + '\n'
+    context = header + '\n'.join(
         ['|'.join(
-                [result[0].metadata[k].replace('\n', '\t') if k in result[0].metadata else '' for k in feats]
+                [result.metadata[f].replace('\n', '\t') if f in result.metadata else '' for f in feats]
             ) for result in results]
         )
     return context
