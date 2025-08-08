@@ -14,7 +14,7 @@ import pandas as pd
 import streamlit as st
 
 from src.constants import METADATA_FIELDS
-from src.data.utils import load_json_file, load_txt_file, get_vector_store
+from src.db.utils import load_json_file, load_txt_file, get_vector_store
 from src.ui.main import validate_openai_api_key, init_sidebar
 from src.llm import query_llm, get_context
 
