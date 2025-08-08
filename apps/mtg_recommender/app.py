@@ -48,6 +48,6 @@ if validate_openai_api_key(api_key):
     query = st.text_input("Enter your card search query:")
 
     if query:
-        context = get_context(query, K=st.session_state.get('k', 100)) #
+        context = get_context(query, K=st.session_state.get('k', 50)) #
         response = query_llm(query, context)
         st.markdown(response)

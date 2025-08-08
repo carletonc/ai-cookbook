@@ -27,7 +27,13 @@ def init_sidebar():
         st.header("Filters & Search Settings [WIP - not functioning]")
         
         # Number of results at the top
-        st.session_state['k'] = st.number_input("Number of Results", min_value=1, max_value=500, value=100, step=1)
+        st.session_state['k'] = st.number_input(
+            "Number of Results", 
+            min_value=1, 
+            max_value=500, 
+            value=100, 
+            step=1
+        )
         st.markdown("---")  # Divider
         
         # Initialize filter values dictionary
