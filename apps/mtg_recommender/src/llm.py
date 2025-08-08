@@ -7,7 +7,7 @@ from pprint import pprint
 from dotenv import load_dotenv
 load_dotenv() 
 
-from src.utils import get_vector_store
+from src.data.utils import get_vector_store
 
 MODEL = "gpt-4.1-nano" # "gpt-4.1-mini", "gpt-3.5-turbo"
 TEMPERATURE = 0.5
@@ -21,7 +21,7 @@ You are a helpful AI assistant designed to accurately answer questions related t
 {context}
 """
 
-def get_agent(user_input: str, context: str = "") -> str:
+def query_llm(user_input: str, context: str = "") -> str:
     """Create and return an agent executor for multi-turn LLM agent."""
     llm = ChatOpenAI(
         model=MODEL, 
@@ -37,11 +37,11 @@ def get_agent(user_input: str, context: str = "") -> str:
 
 def get_context(
     user_input: str, 
-    K: int = 100, 
+    K: int = 50, 
     feats: list = ['name', 'text', 'type', 'power', 'toughness', 'manaCost', 'colorIdentity', 'legalities.commander']
     ) -> str:
     vectorstore = get_vector_store()
-    results = vectorstore.similarity_search_with_score(
+    results = vectorstore.(
         user_input, 
         k=K, 
     )
@@ -49,7 +49,7 @@ def get_context(
     # filter for results & merge metadata
     context = '|'.join(feats) + '\n' + '\n'.join(
         ['|'.join(
-                [result[0].metadata[k] if k in result[0].metadata else '' for k in feats]
+                [result[0].metadata[k].replace('\n', '\t') if k in result[0].metadata else '' for k in feats]
             ) for result in results]
         )
     return context
