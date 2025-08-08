@@ -27,8 +27,8 @@ readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
 with open(readme_path, 'r') as f:
     readme_content = f.read()
 
-with st.expander("ℹ️ About this app", expanded=False):
-    st.markdown(readme_content)
+with st.expander("ℹ️&nbsp;&nbsp;About this app", expanded=True):
+    st.markdown(readme_content, unsafe_allow_html=True)
 
 with st.sidebar:
     st.header("Configuration")
