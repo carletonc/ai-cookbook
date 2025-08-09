@@ -14,40 +14,47 @@ import pandas as pd
 import streamlit as st
 
 from src.constants import METADATA_FIELDS
-from src.db.utils import load_json_file, load_txt_file, get_vector_store
+from src.db.utils import load_json_file, load_txt_file
+from src.db.vectorstore import get_vector_store
 from src.ui.main import validate_openai_api_key, init_sidebar
-from src.llm import query_llm, get_context
+from src.llm import query_llm
+from src.search.main import get_card_by_card_text
 
-# STREAMLIT APP CONFIGURATION
-st.set_page_config(page_title="AI MTG Card Search", layout="wide")
-st.title("🧙‍♂️ AI Magic: The Gathering Card Search")
+def run():
+    # STREAMLIT APP CONFIGURATION
+    st.set_page_config(page_title="AI MTG Card Search", layout="wide")
+    st.title("🧙‍♂️ AI Magic: The Gathering Card Search")
 
-# Read and display README content
-readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
-with open(readme_path, 'r') as f:
-    readme_content = f.read()
+    # Read and display README content
+    readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
+    with open(readme_path, 'r') as f:
+        readme_content = f.read()
 
-with st.expander("ℹ️&nbsp;&nbsp;About this app", expanded=True):
-    st.markdown(readme_content, unsafe_allow_html=True)
+    with st.expander("ℹ️&nbsp;&nbsp;About this app", expanded=True):
+        st.markdown(readme_content, unsafe_allow_html=True)
 
-with st.sidebar:
-    st.header("Configuration")
-    api_key = st.text_input("Enter your OpenAI API Key:", type="password")
+    with st.sidebar:
+        st.header("Configuration")
+        api_key = st.text_input("Enter your OpenAI API Key:", type="password")
 
-# Only proceed if API key is provided
-if validate_openai_api_key(api_key):
-    os.environ["OPENAI_API_KEY"] = api_key  
+    # Only proceed if API key is provided
+    if validate_openai_api_key(api_key):
+        os.environ["OPENAI_API_KEY"] = api_key  
 
-    rules = load_txt_file()
-    # card_df = load_json_file()
-    
-    vectorstore = get_vector_store()
-    # currently irrelevant
-    chroma_filter = init_sidebar()
+        rules = load_txt_file()
+        # card_df = load_json_file()
+        
+        vectorstore = get_vector_store()
+        # currently irrelevant
+        chroma_filter = init_sidebar()
 
-    query = st.text_input("Enter your card search query:")
+        query = st.text_input("Enter your card search query:")
 
-    if query:
-        context = get_context(query, K=st.session_state.get('k', 50)) #
-        response = query_llm(query, context)
-        st.markdown(response)
+        if query:
+            context = get_card_by_card_text(query, K=st.session_state['k']) 
+            response = query_llm(query, context)
+            st.markdown(response)
+        
+
+if __name__ == "__main__":
+    run()

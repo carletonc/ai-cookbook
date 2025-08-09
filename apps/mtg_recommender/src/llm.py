@@ -7,7 +7,7 @@ from pprint import pprint
 from dotenv import load_dotenv
 load_dotenv() 
 
-from src.db.utils import get_vector_store
+from src.db.vectorstore import get_vector_store
 
 MODEL = "gpt-4.1-nano" # "gpt-4.1-mini", "gpt-3.5-turbo"
 TEMPERATURE = 0.5
@@ -35,21 +35,16 @@ def query_llm(user_input: str, context: str = "") -> str:
     response = chain.run(user_input=user_input, context=context)
     return response
 
-def get_context(
-    user_input: str, 
-    K: int = 50, 
-    feats: list = ['name', 'text', 'type', 'power', 'toughness', 'manaCost', 'colorIdentity', 'legalities.commander']
-    ) -> str:
-    vectorstore = get_vector_store()
-    results = vectorstore.similarity_search(
-        user_input, 
-        k=K, 
-    )
-    # filter for results & merge metadata
-    header = '|'.join(feats) + '\n'
-    context = header + '\n'.join(
-        ['|'.join(
-                [result.metadata[f].replace('\n', '\t') if f in result.metadata else '' for f in feats]
-            ) for result in results]
-        )
-    return context
+def router_llm():
+    pass
+
+
+def main(input):
+    # start with router
+    
+    # potential output structure:
+    # {'decision': "get_card_name", "input": "Rhystic Study"}
+    
+    # if router_output == 'get_card_name':
+    #    
+    pass
