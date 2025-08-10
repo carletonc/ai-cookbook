@@ -21,8 +21,7 @@ DIMENSION = 1536  # Dimension for text-embedding-3-small
 
 EMBEDDINGS = OpenAIEmbeddings(
         model=EMBEDDING_MODEL,
-        show_progress_bar=False,
-        api_key=os.getenv("OPENAI_API_KEY")
+        show_progress_bar=False
     )
     
 
