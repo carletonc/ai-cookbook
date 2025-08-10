@@ -1,7 +1,3 @@
-# THIS MODULE WILL FUNCTION AS A REPOSITORY FOR VARIOUS SEARCH FUNCTIONS & ROUTING
-
-# IF A CARD NAME, RETRIEVE THE CARD NAME AND ITS DATA FROM THE WAREHOUSE
-# THEN SEARCH VECTOR DB BASED ON CARD TEXT AND RANK
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
@@ -14,7 +10,7 @@ load_dotenv()
 
 from src.db.vectorstore import get_vector_store
 
-OUTPUT_FIELDS = ['name', 'faceName', 'text', 'type', 'manaCost', 'manaValue', 'colorIdentity', 'side', 'layout', 'power', 'toughness', 'legalities.commander']
+OUTPUT_FIELDS = ['cardName', 'faceName', 'type', 'manaCost', 'manaValue', 'colorIdentity', 'text', 'power', 'toughness', 'side', 'layout', 'legalities.commander']
 HEADER = '|'.join(OUTPUT_FIELDS) + '\n'
 
 vectordb = get_vector_store()
@@ -28,7 +24,7 @@ def normalize(metadata, fields=OUTPUT_FIELDS, just_values=False):
     return [v for v in output.values()] if just_values else output
 
 
-def get_card_by_card_text(
+def retrieve_by_text(
     user_input: str, 
     K: int = 50, 
     output_fields: list = OUTPUT_FIELDS, 
@@ -38,13 +34,15 @@ def get_card_by_card_text(
         query=user_input, 
         k=K, 
     )
+    
     # normalize results
     normalized_results = [normalize(result[0].metadata, fields=output_fields, just_values=True) for result in results]
+    
     # filter for results & merge metadata 
-    return '\n'.join(['|'.join(result) for result in normalized_results])
+    return '\n'.join(['|'.join([str(r) for r in result]) for result in normalized_results])
 
 
-def get_card_by_name(
+def retrieve_by_name(
         card_name, 
         output_fields: list = OUTPUT_FIELDS,
         k=3,
@@ -55,7 +53,7 @@ def get_card_by_name(
         query=card_name,  # Empty string, since we're not doing semantic search
         k=k,
     )
-    print(results[0][0])
+    
     # normalize results
     normalized_results = [normalize(result[0].metadata, fields=output_fields) for result in results]
     scores = [result[-1] for result in results]
@@ -73,13 +71,14 @@ def get_card_by_name(
 
     # hybrid name score based on best match
     best_match = max((normalized_results), key=hybrid_score) if rerank else normalized_results[0]
-    return best_match
+    return '|'.join([v for v in best_match.values()])
 
 
 
 if __name__ == "__main__":
+    # test it
     names = ['Rhystic Study', 'Delver of Secrets', 'Chatterfang']
     for n in names:
-        a = get_card_by_name(n, rerank=False)
+        a = retrieve_by_name(n, rerank=False)
         print(len(a))
         print(a, '\n')

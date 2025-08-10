@@ -31,7 +31,7 @@ def init_sidebar():
             "Number of Results", 
             min_value=1, 
             max_value=500, 
-            value=50, 
+            value=30, 
             step=1
         )
         st.markdown("---")  # Divider
