@@ -23,7 +23,6 @@ EMBEDDINGS = OpenAIEmbeddings(
         model=EMBEDDING_MODEL,
         show_progress_bar=False
     )
-    
 
 
 def create_search_documents(df):
