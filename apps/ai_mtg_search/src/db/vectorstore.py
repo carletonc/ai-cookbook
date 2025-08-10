@@ -13,17 +13,12 @@ from langchain.schema import Document
 from src.constants import METADATA_FIELDS
 from src.db.utils import load_json_file, load_txt_file 
 
-
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX_NAME = "mtg-cards"
 PINECONE_ENVIRONMENT = "us-east-1-aws"  # Update with your preferred environment
 EMBEDDING_MODEL = "text-embedding-3-small"
 DIMENSION = 1536  # Dimension for text-embedding-3-small
 
-EMBEDDINGS = OpenAIEmbeddings(
-        model=EMBEDDING_MODEL,
-        show_progress_bar=False
-    )
 
 
 def create_search_documents(df):
@@ -65,6 +60,11 @@ def initialize_pinecone():
 
 def build_vectorstore(df, index_name=PINECONE_INDEX_NAME, batch_size=500, show_progress=None):
     """Create or load a Pinecone vector store from card data."""
+    embeddings = OpenAIEmbeddings(
+            model=EMBEDDING_MODEL,
+            show_progress_bar=False
+        )
+    
     # Initialize Pinecone
     pc = initialize_pinecone()
     
@@ -83,7 +83,7 @@ def build_vectorstore(df, index_name=PINECONE_INDEX_NAME, batch_size=500, show_p
         if vectorstore is None:
             vectorstore = PineconeVectorStore.from_documents(
                 documents=batch,
-                embedding=EMBEDDINGS,
+                embedding=embeddings,
                 index_name=index_name,
                 text_key="content"
             )
@@ -102,6 +102,11 @@ def build_vectorstore(df, index_name=PINECONE_INDEX_NAME, batch_size=500, show_p
 
 def get_vector_store():
     """Get or create the Pinecone vectorstore for card embeddings."""
+    embeddings = OpenAIEmbeddings(
+            model=EMBEDDING_MODEL,
+            show_progress_bar=False
+        )
+    
     # Initialize Pinecone
     pc = initialize_pinecone()
     index = pc.Index(PINECONE_INDEX_NAME)
@@ -113,7 +118,7 @@ def get_vector_store():
             # Index exists and has data, return existing vectorstore
             return PineconeVectorStore(
                 index=index,
-                embedding=EMBEDDINGS,
+                embedding=embeddings,
                 text_key="content"
             )
     except Exception:
