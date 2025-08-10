@@ -20,6 +20,7 @@ def validate_openai_api_key(api_key):
             st.warning("Invalid OpenAI API key. Please check your key and try again.")
         return False
 
+
 def init_sidebar():
     """Render sidebar UI for filters and search settings. Returns number of results and Chroma filter dict."""
     # --- Sidebar filters (after DB is loaded) ---
@@ -66,57 +67,21 @@ def init_sidebar():
             index=0
         )
         
-    # Chroma filter dict from filter_values / WIP
-    chroma_filter = {}
+    # Filter dict from filter_values / WIP
+    filter = {}
     for key, val in filter_values.items():
         if val == "Any" or val == "":
             continue
         elif key in ['types', 'subtypes', 'supertypes', 'layout']:
             if val:
-                chroma_filter[key] = {"$in": val}
+                filter[key] = {"$in": val}
                 #else:
-                #    chroma_filter[key] = {"$all": values}
+                #    filter[key] = {"$all": values}
         # Only process 'types' filter for testing
         elif key == 'colorIdentity':
             if val:
-                chroma_filter[key] = {"$in": [COLORIDENTITY_DICT[v] for v in val]}
-    if len(chroma_filter) > 1:
-        chroma_filter = {"$and": [{k:v} for k,v in chroma_filter.items()]}
+                filter[key] = {"$in": [COLORIDENTITY_DICT[v] for v in val]}
+    if len(filter) > 1:
+        filter = {"$and": [{k:v} for k,v in filter.items()]}
     
-
-    # Chroma filter dict from filter_values
-    '''
-    chroma_filter = {}
-    for key, val in filter_values.items():
-        if val == "Any" or val == "":
-            continue
-        # For legality fields
-        if key == 'legalities.commander':
-            if val != "Any":
-                chroma_filter[key] = (val == "Legal")
-        # For leadership/eligibility fields
-        elif key == 'leadershipSkills.commander':
-            if val != "Any":
-                chroma_filter[key] = bool(val)
-        # For string values in array fields, handle comma-separated values
-        elif key in ['types', 'subtypes', 'supertypes', 'colorIdentity']:
-            values = [v.strip() for v in str(val).split(',') if v.strip()]
-            if values:
-                if len(values) == 1:
-                    # Single value: just check if array contains it
-                    chroma_filter[key] = {"$contains": values[0]}
-                else:
-                    # Multiple values: check if array contains ALL values
-                    chroma_filter[key] = {"$all": values}
-        # For mana value, handle numeric comparison
-        elif key == 'manaValue':
-            try:
-                chroma_filter[key] = float(val)
-            except ValueError:
-                st.warning(f"Invalid mana value: {val}")
-        # For layout and other strings
-        else:
-            chroma_filter[key] = val
-    '''
-            
-    return chroma_filter
+    return filter

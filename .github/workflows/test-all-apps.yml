@@ -34,7 +34,7 @@ jobs:
           kill $PROMPT_PID
       - name: Test mtg_recommender app
         run: |
-          cd apps/mtg_recommender
+          cd apps/ai_mtg_search
           pip install -r requirements.txt
           streamlit run app.py --server.headless true --server.port 8503 &
           MTG_PID=$!
