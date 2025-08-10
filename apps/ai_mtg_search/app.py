@@ -15,7 +15,6 @@ import streamlit as st
 
 from src.db.utils import load_json_file, load_txt_file
 from src.ui.main import validate_openai_api_key, init_sidebar
-from src.llm import query_llm
 from src.search.search import retrieve_by_text
 
 def run():
@@ -39,6 +38,7 @@ def run():
     if validate_openai_api_key(api_key):
         os.environ["OPENAI_API_KEY"] = api_key 
         from src.db.vectorstore import get_vector_store
+        from src.llm import query_llm
         
         vectorstore = get_vector_store()
         # currently irrelevant
