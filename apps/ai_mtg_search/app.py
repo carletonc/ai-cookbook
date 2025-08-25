@@ -1,4 +1,5 @@
 import os
+import asyncio
 import pandas as pd
 import streamlit as st
 
@@ -34,7 +35,7 @@ def run():
 
         if query:
             
-            response = pipeline(query)
+            response = asyncio.run(pipeline(query))
             st.markdown(response)
         
 
