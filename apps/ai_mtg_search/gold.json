@@ -1,0 +1,707 @@
+[
+    {
+        "query": "What cards that make the most squirrel tokens?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "functional",
+        "expected_cards": [
+            "Chatterfang, Squirrel General",
+            "Squirrel Nest", 
+            "Acorn Harvest",
+            "Chatter of the Squirrel",
+            "Chatterstorm",
+            "Squirrel Mob",
+            "Deranged Hermit",
+            "Krosan Beast"
+        ]
+    },
+    {
+        "query": "Find me cards that make zombies bigger", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "functional",
+        "expected_cards": [
+            "Death Baron",
+            "Cemetery Reaper", 
+            "Undead Warchief",
+            "Lord of the Accursed",
+            "Zombie Master",
+            "Diregraf Captain",
+            "Liliana's Mastery",
+            "Graf Harvest"
+        ]
+    },
+    {
+        "query": "Find me the most efficient exile removal spells", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "functional", 
+        "expected_cards": [
+            "Path to Exile",
+            "Swords to Plowshares",
+            "Generous Gift",
+            "Beast Within", 
+            "Vraska's Contempt",
+            "Anguished Unmaking",
+            "Utter End",
+            "Vindicate"
+        ]
+    },
+    {
+        "query": "What are good white board wipes?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "functional",
+        "expected_cards": [
+            "Wrath of God",
+            "Day of Judgment",
+            "Supreme Verdict",
+            "Cleansing Nova",
+            "Austere Command",
+            "Farewell",
+            "Terminus",
+            "Martial Coup"
+        ]
+    },
+    {
+        "query": "Most mana-efficient creature removal", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "functional",
+        "expected_cards": [
+            "Path to Exile",
+            "Swords to Plowshares", 
+            "Lightning Bolt",
+            "Fatal Push",
+            "Dismember",
+            "Unholy Heat",
+            "Condemn",
+            "Rapid Hybridization"
+        ]
+    },
+    {
+        "query": "What direct damage spells can target planeswalkers?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "functional",
+        "expected_cards": [
+            "Lightning Bolt",
+            "Shock",
+            "Lava Spike",
+            "Chain Lightning", 
+            "Incinerate",
+            "Searing Spear",
+            "Burst Lightning",
+            "Wild Lightning"
+        ]
+    },
+    {
+        "query": "What are efficient ways to destroy enchantments?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "functional",
+        "expected_cards": [
+            "Disenchant",
+            "Naturalize",
+            "Krosan Grip",
+            "Nature's Claim",
+            "Force of Vigor",
+            "Fragmentize",
+            "Seal of Cleansing",
+            "Tranquility"
+        ]
+    },
+    {
+        "query": "Find me cards that prevent damage", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "functional",
+        "expected_cards": [
+            "Fog",
+            "Holy Day",
+            "Ethereal Haze",
+            "Moment's Peace",
+            "Darkness",
+            "Spike Weaver",
+            "Constant Mists",
+            "Prismatic Strands"
+        ]
+    },
+    {
+        "query": "Find me cards that are most similar to Rhystic Study", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "similarity", 
+        "expected_cards": [
+            "Mystic Remora",
+            "Smothering Tithe", 
+            "Esper Sentinel",
+            "Reconnaissance Mission",
+            "Coastal Piracy",
+            "Bident of Thassa",
+            "Consecrated Sphinx",
+            "Mentor of the Meek"
+        ]
+    },
+    {
+        "query": "What cards are similar to The Great Henge", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "similarity",
+        "expected_cards": [
+            "Guardian Project",
+            "Beast Whisperer", 
+            "Elemental Bond",
+            "Primordial Sage",
+            "Soul of the Harvest",
+            "Lifecrafter's Bestiary",
+            "Garruk's Uprising",
+            "Zendikar Resurgent"
+        ]
+    },
+    {
+        "query": "Cheaper alternatives to Mana Crypt", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "similarity",
+        "expected_cards": [
+            "Sol Ring",
+            "Mana Vault",
+            "Chrome Mox",
+            "Mox Diamond",
+            "Lotus Petal",
+            "Simian Spirit Guide",
+            "Elvish Spirit Guide",
+            "Dark Ritual"
+        ]
+    },
+    {
+        "query": "Cards that do similar things to Lightning Bolt", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "similarity",
+        "expected_cards": [
+            "Chain Lightning",
+            "Lava Spike",
+            "Shock",
+            "Galvanic Blast",
+            "Burst Lightning",
+            "Searing Spear",
+            "Incinerate",
+            "Wild Lightning"
+        ]
+    },
+    {
+        "query": "What are the best ramp spells in rakdos?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "constrained",
+        "expected_cards": [
+            "Sol Ring",
+            "Arcane Signet",
+            "Rakdos Signet",
+            "Talisman of Indulgence", 
+            "Commander's Sphere",
+            "Mind Stone",
+            "Fellwar Stone",
+            "Worn Powerstone",
+            "Dark Ritual",
+            "Cabal Ritual"
+        ]
+    },
+    {
+        "query": "What are the best blue counterspells for 2 mana or less?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "constrained", 
+        "expected_cards": [
+            "Counterspell",
+            "Mana Drain",
+            "Swan Song",
+            "Arcane Denial",
+            "Negate",
+            "Dispel",
+            "Mental Misstep",
+            "Flusterstorm"
+        ]
+    },
+    {
+        "query": "Find me the strongest mono-black creatures", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "constrained", 
+        "expected_cards": [
+            "Griselbrand",
+            "Sheoldred, Whispering One",
+            "Kokusho, the Evening Star",
+            "Grave Titan",
+            "Massacre Wurm",
+            "Phyrexian Obliterator",
+            "Bloodgift Demon",
+            "Gray Merchant of Asphodel"
+        ]
+    },
+    {
+        "query": "Show me Standard-legal burn spells", 
+        "note": "Standard legality changes frequently - verify current status", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": "constrained", 
+        "expected_cards": [
+            "Lightning Bolt",
+            "Play with Fire",
+            "Shock",
+            "Pillar of Flame",
+            "Flame Slash",
+            "Lava Spike",
+            "Incinerate",
+            "Searing Spear"
+        ]
+    },
+    {
+        "query": "What are good budget cards for Modern aggro?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "constrained",  
+        "expected_cards": [
+            "Monastery Swiftspear",
+            "Goblin Guide",
+            "Lava Spike",
+            "Lightning Bolt",
+            "Rift Bolt",
+            "Searing Blaze",
+            "Skullcrack",
+            "Atarka's Command"
+        ]
+    },
+    {
+        "query": "Best card draw for 3 mana or less", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "constrained",
+        "expected_cards": [
+            "Rhystic Study",
+            "Phyrexian Arena",
+            "Sylvan Library",
+            "Mystic Remora",
+            "Divination",
+            "Night's Whisper",
+            "Sign in Blood",
+            "Compulsive Research"
+        ]
+    },
+    {
+        "query": "What colorless artifacts provide card draw?",
+        "intent": "CARD_SEARCH",
+        "sub_intent": "constrained", 
+        "expected_cards": [
+            "Scroll Rack",
+            "Sensei's Divining Top",
+            "Staff of Nin",
+            "Mind Stone",
+            "Hedron Archive",
+            "Commander's Sphere",
+            "Howling Mine",
+            "Temple Bell"
+        ]
+    },
+    {
+        "query": "What are the best cards with flashback?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "mechanical",
+        "expected_cards": [
+            "Faithless Looting",
+            "Deep Analysis",
+            "Think Twice", 
+            "Cabal Therapy",
+            "Lingering Souls",
+            "Ancient Grudge",
+            "Dread Return",
+            "Roar of the Wurm"
+        ]
+    },
+    {
+        "query": "Show me cards with protection from red", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "mechanical",
+        "expected_cards": [
+            "Knight of Grace",
+            "White Knight",
+            "Silver Knight",
+            "Paladin en-Vec",
+            "Mother of Runes",
+            "Giver of Runes", 
+            "Eight-and-a-Half-Tails",
+            "Auriok Champion"
+        ]
+    },
+    {
+        "query": "Find me instant speed removal spells", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "mechanical", 
+        "expected_cards": [
+            "Path to Exile",
+            "Swords to Plowshares",
+            "Lightning Bolt",
+            "Fatal Push",
+            "Dismember",
+            "Go for the Throat",
+            "Doom Blade",
+            "Terminate"
+        ]
+    },
+    {
+        "query": "What creatures have flying and vigilance?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "mechanical", 
+        "expected_cards": [
+            "Serra Angel",
+            "Lyra Dawnbringer",
+            "Baneslayer Angel",
+            "Akroma, Angel of Wrath",
+            "Cloudgoat Ranger",
+            "Conclave Phalanx",
+            "Knight of the White Orchid",
+            "Pristine Angel"
+        ]
+    },
+    {
+        "query": "Show me lands that enter untapped", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "mechanical",
+        "expected_cards": [
+            "Shock lands (Steam Vents, Hallowed Fountain, etc.)",
+            "Fetch lands (Polluted Delta, Wooded Foothills, etc.)",
+            "Fast lands (Inspiring Vantage, Concealed Courtyard, etc.)",
+            "Check lands (Clifftop Retreat, Dragonskull Summit, etc.)",
+            "Basic lands (Mountain, Island, Forest, Plains, Swamp)",
+            "Command Tower", 
+            "City of Brass",
+            "Mana Confluence"
+        ]
+    },
+    {
+        "query": "What cards support a sacrifice theme?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "thematic",
+        "expected_cards": [
+            "Viscera Seer",
+            "Carrion Feeder",
+            "Ashnod's Altar",
+            "Phyrexian Altar",
+            "Blood Artist",
+            "Zulaport Cutthroat",
+            "Grave Pact",
+            "Dictate of Erebos"
+        ]
+    },
+    {
+        "query": "Find me cards for a spellslinger deck", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "thematic",
+        "expected_cards": [
+            "Young Pyromancer",
+            "Monastery Mentor",
+            "Talrand, Sky Summoner",
+            "Thing in the Ice",
+            "Guttersnipe",
+            "Docent of Perfection",
+            "Baral, Chief of Compliance",
+            "Goblin Electromancer"
+        ]
+    },
+    {
+        "query": "What are good tribal support cards for elves?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "thematic", 
+        "expected_cards": [
+            "Elvish Archdruid",
+            "Priest of Titania",
+            "Elvish Champion",
+            "Ezuri, Renegade Leader",
+            "Imperious Perfect",
+            "Elvish Clancaller",
+            "Joraga Warcaller",
+            "Craterhoof Behemoth"
+        ]
+    },
+    {
+        "query": "What cards let you draw extra cards each turn?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "conditional",
+        "expected_cards": [
+            "Rhystic Study",
+            "Phyrexian Arena",
+            "Sylvan Library",
+            "Mystic Remora",
+            "Consecrated Sphinx",
+            "Teferi's Ageless Insight",
+            "Well of Lost Dreams",
+            "Howling Mine"
+        ]
+    },
+    {
+        "query": "What draws cards when creatures die?", 
+        "intent": "CARD_SEARCH",
+        "sub_intent": "conditional", 
+        "expected_cards": [
+            "Midnight Reaper",
+            "Grim Haruspex", 
+            "Dark Prophecy",
+            "Fecundity",
+            "Evolutionary Leap",
+            "Species Specialist",
+            "Skullclamp",
+            "Harvester of Souls"
+        ]
+    },
+    
+    {
+        "query": "Find cheaper white alternatives to Farewell that hit artifacts and enchantments", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["similarity", "constrained", "functional"],
+        "expected_cards": [
+            "Cleansing Nova",
+            "Austere Command",
+            "Planar Cleansing",
+            "Rout",
+            "Hour of Revelation",
+            "Vanquish the Horde",
+            "Akroma's Vengeance",
+            "Fumigate"
+        ]
+    },
+    {
+        "query": "Cards that stop graveyard recursion at instant speed", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["functional", "mechanical"],
+        "expected_cards": [
+            "Tormod's Crypt",
+            "Relic of Progenitus",
+            "Soul-Guide Lantern",
+            "Nihil Spellbomb",
+            "Cling to Dust",
+            "Faerie Macabre",
+            "Deadly Rollick",
+            "Scavenger Grounds"
+        ]
+    },
+    {
+        "query": "Creatures with deathtouch and lifelink for 2 mana or less", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["mechanical", "constrained"],
+        "expected_cards": [
+            "Gifted Aetherborn",
+            "Vampire Nighthawk (close at 3 CMC)",
+            "Vampire Cutthroat",
+            "Deadly Recluse",
+            "Gnarlwood Dryad",
+            "Typhoid Rats",
+            "Indulgent Aristocrat",
+            "Hapatra's Mark synergies"
+        ]
+    },
+    {
+        "query": "Rakdos sacrifice payoffs under 4 mana", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["thematic", "constrained"],
+        "expected_cards": [
+            "Mayhem Devil",
+            "Judith, the Scourge Diva",
+            "Oni-Cult Anvil",
+            "Blood Artist",
+            "Zulaport Cutthroat",
+            "Priest of Forgotten Gods",
+            "Falkenrath Aristocrat",
+            "Yawgmoth, Thran Physician"
+        ]
+    },
+    {
+        "query": "Cards that protect my creatures from targeted removal", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["functional"],
+        "expected_cards": [
+            "Heroic Intervention",
+            "Mother of Runes",
+            "Giver of Runes",
+            "Selfless Spirit",
+            "Dauntless Escort",
+            "Teferi's Protection",
+            "Faith's Shield",
+            "Flawless Maneuver"
+        ]
+    },
+    {
+        "query": "Creatures that draw a card when they enter the battlefield", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["conditional", "functional"],
+        "expected_cards": [
+            "Elvish Visionary",
+            "Wall of Omens",
+            "Mulldrifter",
+            "Ravenous Chupacabra",
+            "Solemn Simulacrum",
+            "Skyscanner",
+            "Coiling Oracle",
+            "Thraben Inspector"
+        ]
+    },
+    {
+        "query": "Card draw engines legal in mono-green Commander", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["functional", "constrained"],
+        "expected_cards": [
+            "Sylvan Library",
+            "Garruk's Uprising",
+            "Guardian Project",
+            "Beast Whisperer",
+            "Soul of the Harvest",
+            "Lifecrafter's Bestiary",
+            "Primordial Sage",
+            "Momentous Fall"
+        ]
+    },
+    {
+        "query": "Multicolor lands that enter untapped in Izzet decks", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["constrained", "functional"],
+        "expected_cards": [
+            "Steam Vents",
+            "Sulfur Falls",
+            "Spirebluff Canal",
+            "Shivan Reef",
+            "Cascade Bluffs",
+            "Training Center",
+            "Command Tower",
+            "Mana Confluence"
+        ]
+    },
+    {
+        "query": "Hate cards against graveyard strategies for Modern", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["functional", "constrained"],
+        "expected_cards": [
+            "Rest in Peace",
+            "Leyline of the Void",
+            "Relic of Progenitus",
+            "Nihil Spellbomb",
+            "Grafdigger's Cage",
+            "Surgical Extraction",
+            "Tormod's Crypt",
+            "Cling to Dust"
+        ]
+    },
+    {
+        "query": "Cards that function like Smothering Tithe in black", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["similarity"],
+        "expected_cards": [
+            "Black Market",
+            "Revel in Riches",
+            "Pawn of Ulamog",
+            "Pitiless Plunderer",
+            "Skeletal Scrying"
+        ]
+    },
+    {
+        "query": "Artifacts that fix mana and draw cards", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["functional"],
+        "expected_cards": [
+            "Mind Stone",
+            "Hedron Archive",
+            "Commander's Sphere",
+            "Chromatic Star",
+            "Prophetic Prism"
+        ]
+    },
+    {
+        "query": "Creature tutors that put to battlefield", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["functional"],
+        "expected_cards": [
+            "Green Sun's Zenith",
+            "Natural Order",
+            "Finale of Devastation",
+            "Chord of Calling",
+            "Tooth and Nail"
+        ]
+    },
+    {
+        "query": "Cards that double tokens or create tokens each upkeep", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["functional", "conditional"],
+        "expected_cards": [
+            "Parallel Lives",
+            "Doubling Season",
+            "Anointed Procession",
+            "Tendershoot Dryad",
+            "Ophiomancer"
+        ]
+    },
+    {
+        "query": "Exile creature removal at instant speed in white", 
+        "intent": "CARD_SEARCH", 
+        "expected_cards": [
+            "Swords to Plowshares",
+            "Path to Exile",
+            "Dispatch",
+            "Generous Gift",
+            "Soul Partition"
+        ]
+    },
+    {
+        "query": "Spellslinger payoffs that create tokens on noncreature spells", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["thematic", "functional"],
+        "expected_cards": [
+            "Young Pyromancer",
+            "Talrand, Sky Summoner",
+            "Monastery Mentor",
+            "Third Path Iconoclast",
+            "Saheeli, Sublime Artificer"
+        ]
+    },
+    {
+        "query": "Effects like Teferi’s Protection that phase out or fog the board", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["similarity", "functional"],
+        "expected_cards": [
+            "Heroic Intervention",
+            "Faith's Reward",
+            "Cosmic Intervention",
+            "Eerie Interlude",
+            "Selfless Spirit"
+        ]
+    },
+    {
+        "query": "Alternate win conditions in blue", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["functional", "thematic", "constrained"],
+        "expected_cards": [
+            "Laboratory Maniac",
+            "Jace, Wielder of Mysteries",
+            "Thassa's Oracle",
+            "Psychic Corrosion",
+            "Approach of the Second Sun"
+        ]
+    },
+    {
+        "query": "Repeatable graveyard recursion in Golgari", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["functional", "constrained"],
+        "expected_cards": [
+            "Meren of Clan Nel Toth",
+            "The Gitrog Monster",
+            "Skullwinder",
+            "Journey to Eternity",
+            "Whisper, Blood Liturgist"
+        ]
+    },
+    {
+        "query": "Tax effects that slow opponents’ spells", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["functional", "thematic"],
+        "expected_cards": [
+            "Thalia, Guardian of Thraben",
+            "Vryn Wingmare",
+            "Grand Arbiter Augustin IV",
+            "Sphere of Resistance",
+            "Rhystic Study"
+        ]
+    },
+    {
+        "query": "Budget ramp rocks under $5 for Commander", 
+        "intent": "CARD_SEARCH", 
+        "sub_intent": ["functional", "constrained"],
+        "expected_cards": [
+            "Mind Stone",
+            "Fellwar Stone",
+            "Talisman of Dominance",
+            "Arcane Signet",
+            "Coldsteel Heart"
+        ]
+    }
+]

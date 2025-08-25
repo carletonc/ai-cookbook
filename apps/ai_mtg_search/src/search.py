@@ -39,7 +39,7 @@ def retrieve_by_text(
     normalized_results = [normalize(result[0].metadata, fields=output_fields, just_values=True) for result in results]
     
     # filter for results & merge metadata 
-    return '\n'.join(['|'.join([str(r) for r in result]) for result in normalized_results])
+    return normalized_results # '\n'.join(['|'.join([str(r) for r in result]) for result in normalized_results])
 
 
 def retrieve_by_name(
@@ -61,6 +61,8 @@ def retrieve_by_name(
     card_name_lower = card_name.lower()
 
     def hybrid_score(card):
+        # exact match boost
+        exact_match = 10 if card_name_lower in card['name'].lower() else 0
         # fuzz ratio on full combined name
         name_score = fuzz.ratio(card_name_lower, card['name'].lower())
         # fuzz ratio on face name (exact face)
@@ -71,7 +73,7 @@ def retrieve_by_name(
 
     # hybrid name score based on best match
     best_match = max((normalized_results), key=hybrid_score) if rerank else normalized_results[0]
-    return '|'.join([v for v in best_match.values()])
+    return best_match # '|'.join([v for v in best_match.values()]) 
 
 
 
