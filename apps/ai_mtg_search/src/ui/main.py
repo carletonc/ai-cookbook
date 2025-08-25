@@ -1,6 +1,6 @@
 import streamlit as st
-from ..constants import METADATA_FIELDS
-from .config import TYPES, SUBTYPES, SUPERTYPES, COLORIDENTITY_DICT, LAYOUT
+from src.constants import METADATA_FIELDS
+from src.ui.config import TYPES, SUBTYPES, SUPERTYPES, COLORIDENTITY_DICT, LAYOUT
 
 
 
@@ -66,22 +66,5 @@ def init_sidebar():
             ["Any", True, False],
             index=0
         )
-        
-    # Filter dict from filter_values / WIP
-    filter = {}
-    for key, val in filter_values.items():
-        if val == "Any" or val == "":
-            continue
-        elif key in ['types', 'subtypes', 'supertypes', 'layout']:
-            if val:
-                filter[key] = {"$in": val}
-                #else:
-                #    filter[key] = {"$all": values}
-        # Only process 'types' filter for testing
-        elif key == 'colorIdentity':
-            if val:
-                filter[key] = {"$in": [COLORIDENTITY_DICT[v] for v in val]}
-    if len(filter) > 1:
-        filter = {"$and": [{k:v} for k,v in filter.items()]}
     
     return filter

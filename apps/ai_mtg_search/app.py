@@ -1,19 +1,7 @@
-# ---  SQLite patch for Streamlit Cloud ---
-try:
-    import sqlite3
-    if sqlite3.sqlite_version_info < (3, 35, 0):
-        import sys
-        import pysqlite3
-        sys.modules["sqlite3"] = pysqlite3
-except Exception:
-    # If anything fails, fall back silently. Better to run than crash.
-    pass
-
 import os
 import pandas as pd
 import streamlit as st
 
-from src.db.utils import load_json_file, load_txt_file
 from src.ui.main import validate_openai_api_key, init_sidebar
 
 
@@ -38,18 +26,15 @@ def run():
     if validate_openai_api_key(api_key):
         os.environ["OPENAI_API_KEY"] = api_key 
         from src.db.vectorstore import get_vector_store
-        from src.search.search import retrieve_by_text
-        from src.llm import query_llm
+        from src.llm import pipeline
         
         vectorstore = get_vector_store()
-        # currently irrelevant
-        chroma_filter = init_sidebar()
 
         query = st.text_input("Enter your card search query:")
 
         if query:
-            context = retrieve_by_text(query, K=st.session_state['k']) 
-            response = query_llm(query, context)
+            
+            response = pipeline(query)
             st.markdown(response)
         
 
