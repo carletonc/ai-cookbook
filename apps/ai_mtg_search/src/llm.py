@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from typing import Dict
 import json
@@ -35,7 +36,7 @@ def load_prompt(filepath):
         return None
 
 
-def query_planner(user_input: str) -> dict:
+async def query_planner(user_input: str) -> dict:
     llm = ChatOpenAI(
         model=MODEL, 
         temperature=0.1, 
@@ -45,11 +46,11 @@ def query_planner(user_input: str) -> dict:
         template=load_prompt(PLANNER_PATH) 
     )
     chain = agent_prompt | llm
-    output = chain.invoke({'query':user_input})
+    output = await chain.ainvoke({'query':user_input})
     return json.loads(output.content)
 
 
-def rank_and_explainer(user_input: str, context: str) -> str:
+async def rank_and_explainer(user_input: str, context: str) -> str:
     llm = ChatOpenAI(
         model=MODEL, 
         temperature=0.1, 
@@ -59,14 +60,14 @@ def rank_and_explainer(user_input: str, context: str) -> str:
         template=load_prompt(RANKER_PATH) 
     )
     chain = agent_prompt | llm
-    output = chain.invoke({'query':user_input, 'context':context})
+    output = await chain.ainvoke({'query':user_input, 'context':context})
     return output.content
 
 
-def pipeline(input_query: str) -> Dict:
+async def pipeline(input_query: str) -> str:
     """ """
     
-    planner_output = query_planner(input_query)
+    planner_output = await query_planner(input_query)
     
     target_card_text = None
     candidates = []
@@ -81,11 +82,13 @@ def pipeline(input_query: str) -> Dict:
                 if c not in candidates:
                     candidates.append(c)
                     
-        target_card_text = "\n\nTarget Card Context:\n" + HEADER + '|'.join([str(c) for c in target_card_text])
+        target_card_text = (
+            "\n\nTarget Card Context:\n" 
+            + HEADER 
+            + '|'.join([str(c) for c in target_card_text])
+        )
         
     elif planner_output["query_type"] == "text_search":
-        #print('Text search was reached')
-        
         cards = retrieve_by_text(planner_output["search_text"])
         for c in cards:
             if c not in candidates:
@@ -93,27 +96,39 @@ def pipeline(input_query: str) -> Dict:
         
         
     elif planner_output["query_type"] == "unsupported":
-        output = f"`{input_query}` is unsupported, so we cannot generated meaningful recommendations for you.\nTry searching for a card by its textual description or by a card name you want to find."
-        return output
+        return ( 
+            f"`{input_query}` is unsupported, so we cannot generated meaningful recommendations for you.\nTry searching for a card by its textual description or by a card name you want to find."
+        )
     
     
     else:
-        output = f"`{input_query}` an unknown error occured, please try again so we can generate meaningful recommendations.\nTry searching for a card by its textual description or by a card name you want to find."
-        return output
+        return ( 
+            f"`{input_query}` an unknown error occured, please try again so we can generate meaningful recommendations.\nTry searching for a card by its textual description or by a card name you want to find."
+        )
     
     if candidates:
-        
         if target_card_text:
             input_query += target_card_text
         context = '\n'.join(['|'.join([str(c) for c in candidate]) for candidate in candidates])
         context = HEADER + context
-        ranker_output = rank_and_explainer(user_input=input_query, context=context)
+        ranker_output = await rank_and_explainer(
+            user_input=input_query, 
+            context=context
+        )
         return ranker_output
 
 
 if __name__ == "__main__":
-    for q in [' Control opponents turns', "Return cards to hand", "Cards similar to Chatterfang", ]:
-        output = pipeline(q)
-        print(f'Input Query: {q}\n'
-              f'Output:\n{output}\n')
-        print('---\n')
+    queries = [
+        "Control opponents turns",
+        "Return cards to hand",
+        "Cards similar to Chatterfang",
+    ]
+
+    async def main():
+        tasks = [pipeline(q) for q in queries]
+        results = await asyncio.gather(*tasks)  # run all queries concurrently
+        for q, output in zip(queries, results):
+            print(f"Input Query: {q}\nOutput:\n{output}\n---\n")
+
+    asyncio.run(main())
