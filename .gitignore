@@ -1,6 +1,7 @@
 data/
 *.ipynb
 *.code-workspace
+.deepeval
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
