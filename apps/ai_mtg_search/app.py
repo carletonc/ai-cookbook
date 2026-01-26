@@ -20,7 +20,7 @@ def run():
         st.markdown(readme_content, unsafe_allow_html=True)
 
     with st.sidebar:
-        st.header("Configuration")
+        st.header("Try it out!")
         api_key = st.text_input("Enter your OpenAI API Key:", type="password")
 
     # Only proceed if API key is provided
