@@ -39,7 +39,7 @@ Score the factual accuracy of the provided summary on a 1-5 scale:
    Example: "Q3 revenue increased 23.4% YoY to $5.18M (excluding one-time charges)"
 
 2 (Concerning): Multiple factual errors affecting key insights or trends misrepresented.
-   Example: "Q3 revenue showed steady 23% growth" when data shows volatile monthly changes
+   Example: "Q3 revenue showed steady 23% growth" when data shows volatile monthly changes"
 
 1 (Unacceptable): Fundamental misrepresentation of data, invented statistics, or conclusions opposite to source findings.
    Example: "Q3 revenue declined 15% indicating poor performance" when actual data shows 23% growth

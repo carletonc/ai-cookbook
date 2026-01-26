@@ -12,7 +12,7 @@ def run():
     st.title("🧙‍♂️ AI Magic: The Gathering Card Search")
 
     # Read and display README content
-    readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
+    readme_path = os.path.join(os.path.dirname(__file__), 'ABOUT.md')
     with open(readme_path, 'r') as f:
         readme_content = f.read()
 
