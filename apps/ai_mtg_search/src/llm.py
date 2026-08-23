@@ -1,121 +1,125 @@
 import asyncio
-from pathlib import Path
-from typing import Dict
 import json
+from pathlib import Path
 
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain_openai import OpenAI, ChatOpenAI
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from langchain_openai import ChatOpenAI
 
-from dotenv import load_dotenv
-
-from src.search import retrieve_by_name, retrieve_by_text, HEADER
-load_dotenv() 
+from src.config import LLM_MODEL
+from src.search import (
+    card_abilities,
+    dedupe_cards,
+    format_candidates,
+    resolve_card,
+    search_card_text,
+)
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 PROMPTS_DIR = SCRIPT_DIR / "prompts"
 PLANNER_PATH = PROMPTS_DIR / "planner.md"
 RANKER_PATH = PROMPTS_DIR / "ranker.md"
 
-MODEL = "gpt-4.1-nano" # "gpt-4.1-mini", "gpt-3.5-turbo"
+TEMPERATURE = 0.1
+
+# The seed-card path runs one search per ability, so a per-ability limit as
+# large as the text path's would blow up the ranker's context on a card with
+# four abilities. Cap the union instead.
+TEXT_CANDIDATES = 50
+ABILITY_CANDIDATES = 20
+MAX_CANDIDATES = 60
+
+UNSUPPORTED_MESSAGE = (
+    "`{query}` is outside what this tool covers, so any answer would be guesswork.\n\n"
+    "Try describing a card's effect (\"draw when opponents cast spells\") or naming "
+    "a card to find alternatives to (\"cards like Rhystic Study\")."
+)
+
+UNRESOLVED_MESSAGE = (
+    "No card matching `{name}` was found, so there's no seed card to compare against.\n\n"
+    "Check the spelling, or describe the effect you're looking for instead."
+)
 
 
-
-def load_prompt(filepath):
-    """Loads the content of a Markdown file as plain text."""
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            content = f.read()
-        return content
-    except FileNotFoundError:
-        print(f"Error: The file '{filepath}' was not found.")
-        return None
-    except Exception as e:
-        print(f"An error occurred while reading the file: {e}")
-        return None
+def load_prompt(filepath: Path) -> str:
+    """Load a Markdown prompt template as plain text."""
+    return Path(filepath).read_text(encoding="utf-8")
 
 
-async def query_planner(user_input: str) -> dict:
-    llm = ChatOpenAI(
-        model=MODEL, 
-        temperature=0.1, 
+async def _run_prompt(template_path: Path, **variables) -> str:
+    llm = ChatOpenAI(model=LLM_MODEL, temperature=TEMPERATURE)
+    prompt = PromptTemplate(
+        input_variables=list(variables),
+        template=load_prompt(template_path),
     )
-    agent_prompt = PromptTemplate(
-        input_variables=['query'], 
-        template=load_prompt(PLANNER_PATH) 
-    )
-    chain = agent_prompt | llm
-    output = await chain.ainvoke({'query':user_input})
-    return json.loads(output.content)
-
-
-async def rank_and_explainer(user_input: str, context: str) -> str:
-    llm = ChatOpenAI(
-        model=MODEL, 
-        temperature=0.1, 
-    )
-    agent_prompt = PromptTemplate(
-        input_variables=['query', 'context'], 
-        template=load_prompt(RANKER_PATH) 
-    )
-    chain = agent_prompt | llm
-    output = await chain.ainvoke({'query':user_input, 'context':context})
+    output = await (prompt | llm).ainvoke(variables)
     return output.content
 
 
+async def query_planner(user_input: str) -> dict:
+    """Classify the query into seed_card, text_search, or unsupported."""
+    return json.loads(await _run_prompt(PLANNER_PATH, query=user_input))
+
+
+async def rank_and_explainer(user_input: str, context: str) -> str:
+    return await _run_prompt(RANKER_PATH, query=user_input, context=context)
+
+
+def _seed_card_candidates(card_name: str) -> tuple[dict | None, list[dict]]:
+    """
+    Resolve a seed card, then search once per ability.
+
+    Splitting by ability is the fix for one-card-many-functions: a card that is
+    simultaneously ramp, lifegain and card draw averages into a single vector,
+    so each ability is searched on its own and the results unioned.
+    """
+    seed = resolve_card(card_name)
+    if seed is None:
+        return None, []
+
+    candidates: list[dict] = []
+    for ability in card_abilities(seed):
+        candidates.extend(search_card_text(ability, k=ABILITY_CANDIDATES))
+
+    # The seed card itself is not an alternative to itself.
+    candidates = [
+        card
+        for card in dedupe_cards(candidates)
+        if card["scryfall_oracle_id"] != seed["scryfall_oracle_id"]
+    ]
+    return seed, candidates[:MAX_CANDIDATES]
+
+
 async def pipeline(input_query: str) -> str:
-    """ """
-    
-    planner_output = await query_planner(input_query)
-    
-    target_card_text = None
-    candidates = []
-    
-    if planner_output["query_type"] == "seed_card":
-        #print('Seed Card was reached')
-        
-        target_card_text = retrieve_by_name(planner_output["card_name"])
-        for t in target_card_text['text'].split('\t'):
-            cards = retrieve_by_text(t)
-            for c in cards:
-                if c not in candidates:
-                    candidates.append(c)
-                    
-        target_card_text = (
-            "\n\nTarget Card Context:\n" 
-            + HEADER 
-            + '|'.join([str(c) for c in target_card_text])
-        )
-        
-    elif planner_output["query_type"] == "text_search":
-        cards = retrieve_by_text(planner_output["search_text"])
-        for c in cards:
-            if c not in candidates:
-                candidates.append(c)
-        
-        
-    elif planner_output["query_type"] == "unsupported":
-        return ( 
-            f"`{input_query}` is unsupported, so we cannot generated meaningful recommendations for you.\nTry searching for a card by its textual description or by a card name you want to find."
-        )
-    
-    
+    """Route the query, retrieve candidates, then rank and explain them."""
+    plan = await query_planner(input_query)
+    query_type = plan.get("query_type")
+
+    seed = None
+    if query_type == "seed_card":
+        seed, candidates = _seed_card_candidates(plan.get("card_name"))
+        if seed is None:
+            return UNRESOLVED_MESSAGE.format(name=plan.get("card_name"))
+
+    elif query_type == "text_search":
+        candidates = search_card_text(plan.get("search_text") or input_query, k=TEXT_CANDIDATES)
+
     else:
-        return ( 
-            f"`{input_query}` an unknown error occured, please try again so we can generate meaningful recommendations.\nTry searching for a card by its textual description or by a card name you want to find."
+        return UNSUPPORTED_MESSAGE.format(query=input_query)
+
+    if not candidates:
+        return (
+            f"Nothing in the card pool matched `{input_query}`.\n\n"
+            "Try describing the effect in different words, or loosening any filters."
         )
-    
-    if candidates:
-        if target_card_text:
-            input_query += target_card_text
-        context = '\n'.join(['|'.join([str(c) for c in candidate]) for candidate in candidates])
-        context = HEADER + context
-        ranker_output = await rank_and_explainer(
-            user_input=input_query, 
-            context=context
-        )
-        return ranker_output
+
+    ranker_query = input_query
+    if seed is not None:
+        ranker_query += "\n\nTarget Card Context:\n" + format_candidates([seed])
+
+    return await rank_and_explainer(
+        user_input=ranker_query,
+        context=format_candidates(candidates),
+    )
 
 
 if __name__ == "__main__":
@@ -126,9 +130,8 @@ if __name__ == "__main__":
     ]
 
     async def main():
-        tasks = [pipeline(q) for q in queries]
-        results = await asyncio.gather(*tasks)  # run all queries concurrently
-        for q, output in zip(queries, results):
-            print(f"Input Query: {q}\nOutput:\n{output}\n---\n")
+        results = await asyncio.gather(*(pipeline(q) for q in queries))
+        for query, output in zip(queries, results):
+            print(f"Input Query: {query}\nOutput:\n{output}\n---\n")
 
     asyncio.run(main())
