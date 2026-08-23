@@ -1,7 +1,7 @@
 """
 Judge-scored retrieval precision against the gold queries.
 
-`scripts/eval_retrieval.py` measures recall against `gold.json`'s
+`scripts/eval_retrieval.py` measures recall against `data/gold.json`'s
 `expected_cards`, which is unreliable: the labels name 8 cards where hundreds
 qualify (185 have flying and vigilance; 640 lands enter untapped), and some do
 not satisfy their own query. So recall there reads as ~10% even when every
@@ -32,7 +32,7 @@ from src.config import get_openai_api_key
 from src.search import search_card_text
 
 APP_DIR = Path(__file__).resolve().parent.parent
-GOLD_PATH = APP_DIR / "gold.json"
+GOLD_PATH = APP_DIR / "data" / "gold.json"
 CACHE_PATH = APP_DIR / ".eval_cache" / "judge.json"
 
 JUDGE_SYSTEM = (

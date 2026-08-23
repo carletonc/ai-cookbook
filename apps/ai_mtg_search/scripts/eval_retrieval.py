@@ -24,7 +24,7 @@ from pathlib import Path
 from src.db.neon import query
 from src.search import search_card_text
 
-GOLD_PATH = Path(__file__).resolve().parent.parent / "gold.json"
+GOLD_PATH = Path(__file__).resolve().parent.parent / "data" / "gold.json"
 
 
 def _normalize(name: str) -> str:

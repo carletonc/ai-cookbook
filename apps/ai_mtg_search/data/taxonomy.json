@@ -1,0 +1,192 @@
+{
+    "card_advantage": {
+        "subtypes": [
+            {
+                "subtype": "Draw",
+                "keywords": ["Investigate"],
+                "card_text_regex": ["/draw \\d+ cards?/i", "/each (player|opponent) draws/i", "/whenever .* draw a card/i", "/you may draw (\\d+) cards?/i"],
+                "examples": ["Rhystic Study", "Esper Sentinel", "Beast Whisperer", "Toski, Bearer of Secrets", "Bident of Thassa", "Kindred Discovery", "The One Ring", "Mystic Remora", "Ohran Frostfang", "Ledger Shredder"]
+            },
+            {
+                "subtype": "Impulse Draw",
+                "keywords": [],
+                "card_text_regex": ["/exile the top (\\d+) cards (?:of your library)?/i", "/until (?:end of turn|your next turn),? you may play (?:cards exiled|them)/i", "/play (?:this card|them) (?:this turn|until)/i", "/impulse draw/i"],
+                "examples": ["Light Up the Stage", "Outpost Siege", "Valakut Exploration", "Faldorn, Dread Wolf Herald", "Robber of the Rich", "Chandra, Torch of Defiance", "Etali, Primal Storm", "Fable of the Mirror-Breaker", "Experimental Frenzy", "Throes of Chaos"]
+            },
+            {
+                "subtype": "Wheeling",
+                "keywords": [],
+                "card_text_regex": ["/discard (?:your|their) hand/i", "/shuffle (?:your|their) hand into (?:their|your) library/i", "/draw (?:seven|\\d+) cards?/i", "/each player discards/i"],
+                "examples": ["Wheel of Fortune", "Windfall", "Echo of Eons", "Day's Undoing", "Teferi's Puzzle Box", "Whirlpool Warrior", "Jace's Archivist", "Magus of the Wheel", "Time Reversal", "Reforge the Soul"]
+            },
+            {
+                "subtype": "Tutoring",
+                "keywords": [],
+                "card_text_regex": ["/search (?:your|their) library for (?:a|\\d+) (?:land|creature)/i"],
+                "examples": ["Demonic Tutor", "Green Sun's Zenith", "Sylvan Tutor", "Chord of Calling", "Enlightened Tutor", "Gamble", "Imperial Recruiter", "Fabricate", "Profane Tutor", "Finale of Devastation"]
+            },
+            {
+                "subtype": "Top Deck",
+                "keywords": ["Scry", "Surveil"],
+                "card_text_regex": ["/scry \\d+/i", "/surveil \\d+/i"],
+                "examples": ["Brainstorm", "Ponder", "Sensei's Divining Top", "Sylvan Library", "Oracle of Mul Daya", "Courser of Kruphix", "The Reality Chip", "Soothsaying", "Mirri's Guile", "Future Sight"]
+            },
+            {
+                "subtype": "Discard/Mill",
+                "keywords": ["Dredge", "Madness", "Surveil"],
+                "card_text_regex": ["/mill \\d+ cards?/i", "/discards? \\d+ cards?/i"],
+                "examples": ["Faithless Looting", "Mesmeric Orb", "Glimpse the Unthinkable", "Underworld Breach", "Stitcher's Supplier", "Hedron Crab", "Tasha's Hideous Laughter", "Burning Inquiry", "Vohar, Vodalian Desecrator", "Altar of Dementia"]
+            },
+            {
+                "subtype": "Recursion",
+                "keywords": ["Flashback", "Unearth", "Escape"],
+                "card_text_regex": ["/return (?:target|a) (?:creature|card) from your graveyard/i"],
+                "examples": ["Eternal Witness", "Sun Titan", "Reanimate", "Meren of Clan Nel Toth", "Phyrexian Reclamation", "Past in Flames", "Sevinne's Reclamation", "Chainer, Dementia Master", "Dread Return", "Timeless Witness"]
+            },
+            {
+                "subtype": "Cheating into Play",
+                "keywords": ["Cascade", "Discover"],
+                "card_text_regex": ["/without paying its mana cost/i", "/put (?:a|that) card onto the battlefield/i"],
+                "examples": ["Sneak Attack", "Ojer Kaslam", "Through the Breach", "Aetherworks Marvel", "Genesis Wave", "Indomitable Creativity", "Show and Tell", "Elvish Piper", "Satoru Umezawa", "Etali, Primal Conqueror"]
+            }
+        ]
+    },
+    "ramp": {
+        "subtypes": [
+            {
+                "subtype": "Land Ramp",
+                "keywords": [],
+                "card_text_regex": ["/search (?:your|their) library for (?:a|\\d+) land/i"],
+                "examples": ["Cultivate", "Kodama's Reach", "Exploration", "Azusa, Lost but Seeking", "Sakura-Tribe Elder", "Harrow", "Solemn Simulacrum", "Tatyova, Benthic Druid", "Crucible of Worlds", "Scapeshift"]
+            },
+            {
+                "subtype": "Mana Dorks",
+                "keywords": [],
+                "card_text_regex": ["/\\{T\\}: Add \\{[^}]+\\}/"],
+                "examples": ["Llanowar Elves", "Birds of Paradise", "Bloom Tender", "Priest of Titania", "Faeburrow Elder", "Marwyn, the Nurturer", "Selvala, Heart of the Wilds", "Joraga Treespeaker", "Ignoble Hierarch", "Lotus Cobra"]
+            },
+            {
+                "subtype": "Mana Rocks",
+                "keywords": [],
+                "card_text_regex": ["/\\{T\\}: Add \\{[^}]+\\}/"],
+                "examples": ["Sol Ring", "Arcane Signet", "Mana Crypt", "Chromatic Lantern", "Gilded Lotus", "Thran Dynamo", "Fellwar Stone", "Commander's Sphere", "Hedron Archive", "Midnight Clock"]
+            },
+            {
+                "subtype": "Cost Reduction",
+                "keywords": ["Affinity", "Convoke"],
+                "card_text_regex": ["/costs? \\d+ less to cast/i"],
+                "examples": ["Goblin Electromancer", "Urza's Incubator", "Heartless Summoning", "Baral, Chief of Compliance", "Semblance Anvil", "Hazoret's Monument", "The Immortal Sun", "Cloud Key", "Oketra's Monument", "Jet Medallion"]
+            },
+            {
+                "subtype": "Fast Mana",
+                "keywords": [],
+                "card_text_regex": ["/add \\d+ mana/i"],
+                "examples": ["Dark Ritual", "Sol Ring", "Mana Crypt", "Jeweled Lotus", "Mana Vault", "Grim Monolith", "Lion's Eye Diamond", "Mox Opal", "Mox Diamond", "Ancient Tomb", "Cabal Ritual"]
+            },
+            {
+                "subtype": "Multipliers",
+                "keywords": [],
+                "card_text_regex": ["/double (?:the|your) (?:mana|tokens)/i", "/add (?:an additional|\\d+) mana/i", "/whenever you tap a land for mana/i"],
+                "examples": ["Nyxbloom Ancient", "Mana Reflection", "Zendikar Resurgent", "Vorinclex, Voice of Hunger", "Kinnan, Bonder Prodigy", "Nissa, Who Shakes the World", "Caged Sun", "Extraplanar Lens", "Gauntlet of Power", "Regal Behemoth"]
+            },
+            {
+                "subtype": "Rituals", 
+                "keywords": [], 
+                "card_text_regex": ["/add \\{[^}]+\\} for each (?:creature|permanent)/i", "/add \\d+ mana of any one color/i", "/sacrifice (?:a|X) (?:creature|permanent)/i"], 
+                "examples": ["Dark Ritual", "Seething Song", "Pyretic Ritual", "Desperate Ritual", "Cabal Ritual", "Battle Hymn", "Songs of the Damned", "Rain of Filth", "Culling the Weak", "Infernal Plunge"]
+            },
+            {
+                "subtype": "Treasures",
+                "keywords": [],
+                "card_text_regex": ["/create (?:a|\\d+) Treasure tokens?/i"],
+                "examples": ["Dockside Extortionist", "Smothering Tithe", "Ragavan, Nimble Pilferer", "Prosperous Partnership", "Bootleggers' Stash", "Deadly Dispute", "Pitiless Plunderer", "Xorn", "Gala Greeters", "Unexpected Windfall"]
+            }
+        ]
+    },
+    "interaction": {
+        "subtypes": [
+            {
+                "subtype": "Targeted Removal",
+                "keywords": ["Deathtouch"],
+                "card_text_regex": ["/destroy target (?:creature|permanent)/i", "/exile target (?:creature|permanent)/i", "/deals? \\d+ damage to target/i", "/sacrifice(?: a| that) (?:creature|permanent)/i"],
+                "examples": ["Swords to Plowshares", "Assassin's Trophy", "Dismember"]
+            },
+            {
+                "subtype": "Board Wipes",
+                "keywords": ["Cleave"],
+                "card_text_regex": ["/destroy all (?:creatures|permanents)/i", "/exile all (?:creatures|permanents)/i", "/each player sacrifices (?:all|\\d+)/i", "/damage to each (?:creature|player)/i"],
+                "examples": ["Wrath of God", "Damnation", "Toxic Deluge", "Blasphemous Act", "Farewell", "Cyclonic Rift", "Austere Command", "Nevinyrral's Disk", "Urza's Ruinous Blast", "Decree of Annihilation"]
+            },
+            {
+                "subtype": "Counterspells",
+                "keywords": [],
+                "card_text_regex": ["/counter target (?:spell|ability)/i", "/unless (?:its|their) controller pays/i", "/no one may cast spells/i"],
+                "examples": ["Counterspell", "Force of Will", "Mana Drain", "Dovin's Veto", "Flusterstorm", "Swan Song", "Fierce Guardianship", "Mystic Confluence", "An Offer You Can't Refuse", "Drown in the Loch"]
+            },
+            {
+                "subtype": "Forced Sacrifice",
+                "keywords": [],
+                "card_text_regex": ["/each (?:player|opponent) sacrifices/i", "/sacrifice (?:a|\\d+) (?:creature|permanent)/i", "/target player sacrifices/i"],
+                "examples": ["Liliana of the Veil", "Grave Pact", "Dictate of Erebos", "Fleshbag Marauder", "Plaguecrafter", "Sheoldred, Whispering One", "Tergrid, God of Fright", "Killing Wave", "Smallpox", "Torment of Hailfire"]
+            },
+            {
+                "subtype": "Discard Effects",
+                "keywords": [],
+                "card_text_regex": ["/target player discards/i", "/each player discards/i", "/discards? (?:their|your) hand/i"],
+                "examples": ["Thoughtseize", "Hymn to Tourach", "Duress", "Mind Twist", "Kroxa, Titan of Death's Hunger", "Tergrid's Lantern", "Burglar Rat", "Necrogen Mists", "Waste Not", "Painful Quandary"]
+            },
+            {
+                "subtype": "Graveyard Hate",
+                "keywords": [],
+                "card_text_regex": ["/exile (?:all|target) cards? from (?:a|your) graveyard/i", "/cards? can't enter graveyards/i", "/shuffle (?:a|target) graveyard/i"],
+                "examples": ["Rest in Peace", "Leyline of the Void", "Soul-Guide Lantern", "Scavenging Ooze", "Dauthi Voidwalker", "Bojuka Bog", "Tormod's Crypt", "Relic of Progenitus", "Nihil Spellbomb", "Planar Void"]
+            },
+            {
+                "subtype": "Combat Disruption",
+                "keywords": ["Goad"],
+                "card_text_regex": ["/creatures must attack/i"],
+                "examples": ["Disrupt Decorum", "Kardur, Doomscourge", "Geode Rager"]
+            },
+            {
+                "subtype": "Stax",
+                "keywords": [],
+                "card_text_regex": ["/players? can't untap (?:more than \\d+ )?lands?/i", "/spells? cost \\{[^}]+\\} more to cast/i", "/creatures? enter(?:s)? the battlefield tapped/i"],
+                "examples": ["Winter Orb", "Static Orb", "Hokori, Dust Drinker", "Smokestack", "Trinisphere", "Thalia, Guardian of Thraben", "Archon of Emeria", "Rule of Law", "Eidolon of Rhetoric", "Damping Sphere"]
+            },
+            {
+                "subtype": "Taxing",
+                "keywords": [],
+                "card_text_regex": ["/pay \\{[^}]+\\} or sacrifice/i", "/attacking costs? \\{[^}]+\\} more/i", "/activated abilities? cost \\{[^}]+\\} more/i"],
+                "examples": ["Propaganda", "Ghostly Prison", "Sphere of Safety", "Norn's Annex", "Collector Ouphe", "Aura of Silence", "Vryn Wingmare", "Glowrider", "Vandalblast", "Karn, the Great Creator"]
+            }   
+        ]   
+    },
+    "protection": {
+        "subtypes": [
+            {
+                "subtype": "Hexproof/Shroud",
+                "keywords": ["Hexproof", "Shroud"],
+                "card_text_regex": ["/hexproof/i", "/can't be targeted/i"],
+                "examples": ["Lightning Greaves", "Shalai, Voice of Plenty", "Saryth, the Viper's Fang", "Archetype of Endurance", "Leyline of Sanctity", "Tamiyo, Collector of Tales", "Orbs of Warding", "Alpha Authority"]
+            },
+            {
+                "subtype": "Indestructibility",
+                "keywords": ["Indestructible"],
+                "card_text_regex": ["/indestructible/i"],
+                "examples": ["Heroic Intervention", "Avacyn, Angel of Hope", "Darksteel Plate", "Eldrazi Monument", "Unbreakable Formation", "Flawless Maneuver", "Boros Charm", "Teferi's Protection", "Guardian of Faith", "Withstand Death"]
+            },
+            {
+                "subtype": "Prevent Damage/Fog",
+                "keywords": [],
+                "card_text_regex": ["/prevent all combat damage/i"],
+                "examples": ["Fog", "Arachnogenesis", "Inkshield", "Deflecting Swat", "Deflecting Palm", "Comeuppance", "Batwing Brume", "Dawn Charm", "Obscuring Haze", "Tangle"]
+            },
+            {
+              "subtype": "Evasion & Deterrence",
+              "keywords": ["Protection", "Deter"],
+              "card_text_regex": ["/creatures? can't attack (?:you|each other)/i"],
+              "examples": ["Propaganda", "Silent Arbiter", "Crawlspace", "No Mercy", "Koskun Falls", "Windborn Muse", "Norn's Annex", "Michiko Konda, Truth Seeker", "Island Sanctuary", "Kazuul, Tyrant of the Cliffs"]
+            }
+        ]
+    }
+}
