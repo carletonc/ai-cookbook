@@ -1,7 +1,11 @@
 data/
 *.ipynb
+# ai_mtg_search notebooks are part of the app's documented analysis, so they
+# are committed. Clear outputs before staging to keep diffs reviewable.
+!apps/ai_mtg_search/*.ipynb
 *.code-workspace
 .deepeval
+.eval_cache/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

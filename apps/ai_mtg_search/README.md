@@ -1,152 +1,63 @@
-# Agentic Search Engine for Magic: The Gathering Cards
+# Agentic Search & Ranking for Magic: The Gathering
 
 ## The Problem
 
-Imagine searching for "treatments that prevent clotting." The search engine returns vascular filters, hydration protocols, and blood type screening - all technically correct, but representing completely different medical mechanisms. You meant anticoagulant drugs specifically. The search understood your *words* but missed your *intent*.
+An LLM answers from the average of its training data, and Magic is a small slice of that corpus, so a general-purpose model doesn't know the game's rules — it approximates them, fluently and wrongly. A bigger model doesn't change the mixture, and a model that self-corrects is correcting against the same thin prior without properly engineered context.
 
-Now the inverse: you need warfarin, but it costs $300/month. You need a functionally equivalent generic at a fraction of the cost. The search engine can't help - it doesn't understand drug mechanisms well enough to identify functional equivalents or optimize for cost while maintaining efficacy.
+Four properties of the domain also break plain semantic search:
 
-Finally: doctors use informal shorthand like "cath lab" that never appears in official documentation. Search using this terminology and the system fails - the language doesn't exist in its training data.
+1. **Technical vocabulary.** Ordinary words are load-bearing rules terms: a *tutor* searches your library, to *mill* is to move cards from library to graveyard, and *counter* means both cancelling a spell and a myriad of possible marker sitting on a creature. The collisions have mechanical consequences — *destroy*, *exile*, and *sacrifice* all read as "removal," but indestructible stops only the first, exile doesn't count as dying (so death triggers never fire), and sacrifice ignores both. Embeddings put these terms next to each other because English does; the rules pull them apart.
+2. **Embedded slang.** *Mana rock*, *board wipe*, and *impulse draw* appear nowhere in official card text or the rulebook, yet they're how players actually search. Some of it inverts the plain meaning: impulse draw isn't drawing at all — it exiles cards to play temporarily, so none of the "whenever you draw" triggers a model would assume actually fire.
+3. **One need, many mechanics.** "Stop a flying creature" is served by several unrelated functions — reach, removal, ability-stripping, or a global effect — each with entirely different card text.
+4. **One card, many functions.** A single card can be ramp, lifegain, and card draw at once. Embedding it as one document blurs all three into one vector.
 
-**This is the three-layer semantic problem**: common words with strict technical definitions, undocumented expert slang, and queries requiring multi-step reasoning. It appears across technical domains - legal research, patent search, technical support.
+What makes that worth solving is the shape of the game itself. The strongest cards are often prohibitively expensive, and the well-known answers are the ones everyone already plays — so players are optimizing for two things at once: spend less, and don't play the same deck as the table next to them. Somewhere in a 33,000+ card legal pool there is usually a cheaper, less-played card that does the job. Finding it is a retrieval and ranking problem that no tool does well (yet).
 
-**Magic: The Gathering faces this exact problem**, with an added market failure: the best cards are prohibitively expensive ($20-$500+), and popularity-driven recommendations make every deck identical.
+## Architecture
 
----
+```
+Query → Router (LLM) → Retrieval (vector + fuzzy) → Re-ranker (LLM) → Ranked cards + rationale
+```
 
-## Magic: the Gathering as a Case Study
+**1. Router.** An LLM classifies the query into `seed_card` ("alternatives to Rhystic Study"), `text_search` ("draw when opponents cast spells"), or `unsupported`, returning strict JSON. Out-of-scope asks — rules adjudication, price-only, "what commander should I build" — are declined rather than answered badly. The cheapest fix for a hallucination is not answering.
 
-Magic is a competitive card game with 33,000+ cards. A player wants: *"Budget alternatives to Rhystic Study that draw cards when opponents do things."*
+**2. Retrieval.** Card data lives in Neon Postgres with `pgvector`, maintained by a separate weekly ETL repo (`mtg-db`); this app is read-only and embeds queries only. Two vector spaces are kept apart on purpose — one over card *names*, one over preprocessed oracle *text* — alongside the structured columns (type, mana value, colour identity, keywords, legality) as SQL predicates.
 
-This breaks standard search across three layers:
+- *Seed card path*: resolve the name by unioning semantic search over the name vectors with lexical fuzzy matching, then **split the card's text into its individual abilities and run one semantic query per ability**, unioning the results. This is the fix for one-card-many-functions.
+- *Text path*: a single embedding query, top-50 for recall.
 
-### Layer 1: Technical Language Override
+Keeping the two spaces separate matters more than any tuning: `card_text` holds oracle text only, so a name query aimed at it returns cards that merely *mention* the name. Searching for "Lightning Bolt" there never returns Lightning Bolt.
 
-**"Destroy target creature"** seems simple, but:
-- "Destroy" is a specific game action
-- Some creatures are "indestructible" (immune to destruction)
-- Creatures can be "exiled" instead (different game zone, different triggers)
-- Creatures can be reduced to 0 toughness (bypasses indestructible)
+**3. LLM re-ranker.** Candidates are scored against a fixed priority ladder — effect family → scope → speed → mana efficiency → type fit → color identity → legality — with deterministic tie-breaks, deduplication of split/modal/double-faced printings, and removal of zero-overlap candidates. Each surviving card gets a one-sentence factual justification.
 
-**LLMs learn "destroy" and "exile" are semantically similar** (both involve removal). But functionally, they're as different as prescribing antibiotics versus performing surgery - different mechanisms, different edge cases, different deck implications.
+The ranker is constrained to the retrieved fields only. **The model supplies reasoning; the index supplies facts.**
 
-*Similar to legal "consideration" or medical "acute" - common words repurposed with narrow technical meanings.*
+## Design decisions
 
-### Layer 2: Undocumented Slang
+- **Grounding over model size.** Both LLM stages run a small, inexpensive model at low temperature. Retrieved card text does the work a frontier model would only approximate — cheaper *and* more accurate in a niche domain.
+- **Deterministic by design.** Single-turn, no agent loop, fixed tie-breaks. The same query returns the same ranking, which is what makes evaluation and iteration possible.
+- **Function over popularity.** Ranking reads card text, so an obscure $0.25 card competes with a $65 staple on equal footing.
+- **Refusal over guessing.** An out-of-scope query returns a scope message instead of a plausible answer assembled from nothing. A name that resolves too weakly is refused rather than silently matched to the nearest vector — measured separation is wide (genuine misspellings score 81–100 on the fuzzy scale, nonsense 30–60).
 
-Players use terminology evolved over 30+ years that never appears in official card text:
-- **"Impulse draw"**: Exile cards temporarily *(contradicts literal meaning - not drawing!)*
-- **"Mana rock"**: Artifact that produces mana
-- **"Ramp"**: Accelerate mana production
-- **"Board wipe"**: Destroy all creatures
+## Measured engineering decisions
 
-This exists in Reddit discussions and tournament commentary, not official rules. Standard vector search fails because this terminology isn't in training data or appears in wrong contexts.
+Two choices were made against numbers rather than defaults. Both are reproducible against a live database with `eda.ipynb`.
 
-### Layer 3: Multi-Hop Reasoning
+**Exact search beats the approximate index at this scale.** The database ships a single IVFFlat index spanning all three embedding sources, so a source-filtered query probes one cell and then discards most of it to the filter. At the server's default one probe, recall against an exact baseline fell as low as 0% at k=5. Worse, Postgres only chose the index below roughly `LIMIT 10`, so retrieval quality silently depended on `k`. Brute force over 36k vectors costs ~100–150 ms server-side — negligible beside two LLM calls — so every vector query forces an exact scan and gets deterministic, exactly-correct ranking.
 
-*"Things that stop flying creatures"* must map to:
-- Creatures with "Reach" keyword *(can block flyers)*
-- Removal spells *(destroy/exile the creature)*
-- Ability removal *(strip flying from creature)*
-- Global effects *("creatures lose all abilities")*
+**ONNX runtime instead of torch, verified equivalent.** Streamlit Community Cloud caps apps at 1 GB of memory, which PyTorch alone can exhaust. Swapping to an ONNX build of the same MiniLM weights cut the install from ~1 GB to ~80 MB. Equivalence was measured, not assumed: reconstructing 200 stored vectors gave a minimum cosine similarity of 1.000000, and top-10 retrieval agreed with sentence-transformers 99% of the time — the single disagreement being the last slot of a group of cards at bit-identical distance. `scripts/check_embedding_parity.py` re-checks this after any model change.
 
-Each has different card text patterns. The system must reason: **game rules → solution categories → text variations**.
+## Evaluation
 
-### Why Vector Search Fails
+`scripts/eval_judge.py` scores precision with an LLM judge reading each returned card's real fields — of the cards retrieval returns, how many answer the question?
 
-Query: *"Budget alternatives to Rhystic Study"* requires:
-1. Current market price lookup ($40)
-2. Understand mechanics (draw when opponents cast spells + tax)
-3. Decompose into searchable components
-4. Find cards sharing *subset* of mechanics
-5. Filter by price (<$10) and color identity
-6. Rank by functional similarity + budget savings
+This replaced recall against the 49-query gold set, which turned out to be unmeasurable as labelled: each query names 8 `expected_cards` where hundreds qualify (185 cards have flying and vigilance; 640 lands enter untapped), and some labels don't satisfy their own query. Retrieval can return 50 correct cards and score zero. `scripts/eval_retrieval.py` keeps that number as a regression tripwire, where the trend is informative and the absolute value isn't.
 
-Vector search returns text-similar cards. **It cannot access pricing data, decompose mechanics, or execute multi-objective optimization.**
+The zero-recall queries were the useful output. They cluster into three groups, none of which vector search over oracle text can answer: **slang** ("ramp", "burn", "spellslinger"), **structured predicates** ("2 mana or less", "in rakdos", "Standard-legal"), and **negation** ("lands that enter untapped"). Hand-decomposing them confirms it — "lands that enter untapped" goes from 0% to 38% as a SQL predicate. That is what the roadmap below is for.
 
----
+## Roadmap
 
-## The Market Problem
-
-### Economic Barrier
-Competitive decks cost $500-$2000. Staple cards run $20-$500+. Budget players are priced out.
-
-**The insight**: Functionally equivalent cards from unpopular sets often cost <$5, but existing tools can't surface them.
-
-**Example:**
-- **Rhystic Study** ($40): Draw when opponent casts spell (unless they pay 1)
-- **Insight** ($0.25): Draw when opponent casts green spell
-- **Monastery Siege** ($0.50): Draw each turn (or mill opponent)
-
-In specific contexts, these achieve 60-80% of Rhystic Study's function at <2% the cost. **Existing tools optimize for popularity, not functional similarity + budget.**
-
-### Homogenization
-Recommendation engines rank by popularity, creating feedback loops. Result: every deck uses the same 50-100 staples. 
-
-Players want mechanically viable cards their opponents haven't seen - while staying within budget.
-
----
-
-## Why This Is Hard
-
-Magic is an ideal testbed because:
-- 33,000+ cards with well-defined rules (250-page rulebook)
-- Clear success metrics (deck functionality, cost efficiency, novelty)
-- Real user pain points (economic barriers + homogenization)
-
-**Standard NLP fails because:**
-1. **Technical vocabulary override**: Common words with contradictory game-mechanical definitions
-2. **Undocumented slang**: 30+ years of evolved terminology not in training data
-3. **Multi-hop reasoning**: Queries need intent → mechanics → retrieval chains
-4. **Multi-objective constraints**: Optimize for relevance AND budget AND novelty simultaneously
-
----
-
-## Technical Solution: Agentic Workflow Design
-
-### Why This Project Matters
-
-This is a living project, primarily intended as an **exercise in agentic workflow design** - architecting multi-stage systems that combine LLM reasoning with structured validation.
-
-**The domain (Magic) provides ideal conditions:**
-- Clear ground truth for evaluation (functional card equivalence validated by expert players)
-- Measurable success metrics (precision, budget efficiency, novelty)
-- Real user impact (economic accessibility, deck diversity)
-
-Future expansions may include memory for personalization, traceability for debugging complex queries, and production-grade reliability features - but the current focus is on designing effective reasoning workflows.
-
-### Current Approach: Deterministic Multi-Stage Pipeline
-
-The system uses a **single-turn agentic workflow** designed to maintain reproducible outputs. Each query flows through discrete stages:
-
-**Stage 1: Query Understanding & Translation**
-- Parse user intent and identify slang terms
-- Translate informal language → formal game mechanics using prompt engineering
-- *Example: "mana rocks under 2 CMC" → "artifacts with mana abilities where converted mana cost ≤ 2"*
-
-**Stage 2: Hybrid Retrieval**
-- **Vector search**: Semantic similarity using embeddings (broad recall)
-- **Structured filtering**: Color identity, card type, mana cost constraints
-- **Rules validation**: Mechanical correctness (does this card actually work in this deck?)
-
-**Stage 3: Multi-Objective Ranking**
-
-Score retrieved cards on weighted criteria:
-- **Semantic relevance** (primary): How well does it match functional intent?
-- **Budget efficiency** (secondary): Price relative to "obvious" staple alternatives
-- **Novelty** (tertiary): Penalize cards in top-100 most-played lists
-- **Legality** (filter): Deprioritize illegal cards but still surface if search-relevant
-
-*Each stage is deterministic - same query produces identical results, enabling systematic evaluation and iteration.*
-
-### Alternatives Under Consideration
-
-**Agentic loops with iterative refinement:**
-- Initial retrieval → evaluate precision → reformulate query if needed → re-retrieve
-- Enables self-correction when slang is misinterpreted or initial results miss the mark
-- *Trade-off: Non-deterministic outputs, harder to debug, increased latency & cost*
-
-**Fine-tuning for domain knowledge:**
-- Fine-tune embeddings on Magic corpus (comprehensive rules + community discussions + competitive deck lists)
-- Learn direct mappings: slang → mechanics, functional similarity despite different text patterns
-- *Trade-off: Upfront data engineering cost, but potentially more efficient than complex prompt chains*
+- Planner emits structured filters (colour, mana value, keywords, legality) rather than only a search string — the SQL half of the system is currently unreachable from a user query
+- A mechanic taxonomy (keyword and regex patterns per effect family) to expand player slang into oracle phrasing
+- Rules and glossary retrieval: 3,674 chunks are indexed and queryable, but the router still declines rules questions
+- Price-aware ranking, making budget substitution a first-class objective
