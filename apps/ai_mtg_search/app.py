@@ -3,19 +3,15 @@ import os
 
 import streamlit as st
 
-from src.ui.main import validate_openai_api_key
+from src.ui.main import load_ui_text, validate_openai_api_key
 
 
 def run():
     st.set_page_config(page_title="AI MTG Card Search & Rec", layout="wide")
     st.title("🧙‍♂️ AI Magic: The Gathering Card Search")
 
-    readme_path = os.path.join(os.path.dirname(__file__), "README.md")
-    with open(readme_path, "r") as f:
-        readme_content = f.read()
-
     with st.expander("ℹ️&nbsp;&nbsp;About this app", expanded=True):
-        st.markdown(readme_content, unsafe_allow_html=True)
+        st.markdown(load_ui_text("ABOUT.md"), unsafe_allow_html=True)
 
     with st.sidebar:
         st.header("Try it out!")

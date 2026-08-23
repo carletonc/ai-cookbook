@@ -1,4 +1,13 @@
+from pathlib import Path
+
 import streamlit as st
+
+_UI_DIR = Path(__file__).resolve().parent
+
+
+def load_ui_text(name: str) -> str:
+    """Read a markdown (or other text) file sitting next to this module."""
+    return (_UI_DIR / name).read_text(encoding="utf-8")
 
 
 def validate_openai_api_key(api_key):
