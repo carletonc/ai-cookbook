@@ -1,19 +1,17 @@
-import os
 import asyncio
-import pandas as pd
+import os
+
 import streamlit as st
 
-from src.ui.main import validate_openai_api_key, init_sidebar
+from src.ui.main import validate_openai_api_key
 
 
 def run():
-    # STREAMLIT APP CONFIGURATION
     st.set_page_config(page_title="AI MTG Card Search & Rec", layout="wide")
     st.title("🧙‍♂️ AI Magic: The Gathering Card Search")
 
-    # Read and display README content
-    readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
-    with open(readme_path, 'r') as f:
+    readme_path = os.path.join(os.path.dirname(__file__), "README.md")
+    with open(readme_path, "r") as f:
         readme_content = f.read()
 
     with st.expander("ℹ️&nbsp;&nbsp;About this app", expanded=True):
@@ -23,21 +21,21 @@ def run():
         st.header("Try it out!")
         api_key = st.text_input("Enter your OpenAI API Key:", type="password")
 
-    # Only proceed if API key is provided
-    if validate_openai_api_key(api_key):
-        os.environ["OPENAI_API_KEY"] = api_key 
-        from src.db.vectorstore import get_vector_store
-        from src.llm import pipeline
-        
-        vectorstore = get_vector_store()
+    if not validate_openai_api_key(api_key):
+        return
 
-        query = st.text_input("Enter your card search query:")
+    os.environ["OPENAI_API_KEY"] = api_key
 
-        if query:
-            
+    # Imported after the key is set so a visitor who never enters one does not
+    # pay for a database connection or an embedding model load.
+    from src.llm import pipeline
+
+    query = st.text_input("Enter your card search query:")
+    if query:
+        with st.spinner("Searching the card pool..."):
             response = asyncio.run(pipeline(query))
-            st.markdown(response)
-        
+        st.markdown(response)
+
 
 if __name__ == "__main__":
     run()
