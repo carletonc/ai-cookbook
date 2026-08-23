@@ -88,7 +88,7 @@ def _read_only_cursor(settings: dict | None):
 # index is global across all three embedding sources, so a source-filtered
 # search at the default probes=1 measured as low as 0% recall@5. Worse, the
 # planner only chooses the index below roughly LIMIT 10, so retrieval quality
-# would silently depend on k. Reproduce with eda.ipynb.
+# would silently depend on k. Reproduce with notebooks/eda.ipynb.
 _EXACT_SCAN_SETTINGS = {"enable_indexscan": "off", "enable_bitmapscan": "off"}
 
 

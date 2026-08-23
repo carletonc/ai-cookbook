@@ -3,7 +3,7 @@ Retrieval over Neon Postgres + pgvector.
 
 Composes structured SQL filters with vector search rather than folding metadata
 into one opaque index. Five decisions here come from measurements against the
-live database, reproducible with eda.ipynb:
+live database, reproducible with notebooks/eda.ipynb:
 
 - Every vector query runs `exact=True`. The shared IVFFlat index spans all
   three embedding sources, so a `source`-filtered search loses recall, and the
@@ -13,14 +13,16 @@ live database, reproducible with eda.ipynb:
   bit-identical distances across several cards.
 - `card_text` searches exclude empty chunks; 366 faces have no oracle text and
   would otherwise match anything.
-- Name resolution unions vector search with lexical fuzzy matching, because
-  each misses cards the other finds.
+- Name resolution tries exact title, then substring contains (for character
+  names like Narset), then unions vector search with lexical fuzzy matching.
 - Results collapse to one row per card, since multi-faced cards store one row
   per face.
 """
 
 import json
 import threading
+from dataclasses import dataclass
+from typing import Literal
 
 from rapidfuzz import fuzz, process
 
@@ -29,29 +31,17 @@ from src.constants import (
     SOURCE_CARD_TEXT,
     SOURCE_RULES,
 )
+from src.db.cards import (
+    CARD_COLUMNS,
+    dedupe_cards,
+    lookup_card_by_oracle_id,
+    lookup_card_exact,
+    lookup_cards_containing_name,
+    sort_for_picker,
+)
 from src.db.neon import query
 from src.embeddings import embed_query
 from src.utils.mtg_text import preprocess_oracle_text
-
-# `commander_legal` is derived rather than stored; everything else is a column.
-_CARD_COLUMNS = """
-    c.scryfall_oracle_id,
-    c.face_index,
-    c.name,
-    c.face_name,
-    c.type_line,
-    c.mana_cost,
-    c.mana_value,
-    c.color_identity,
-    c.oracle_text,
-    c.power,
-    c.toughness,
-    c.loyalty,
-    c.keywords,
-    c.layout,
-    (c.legalities->>'commander') = 'Legal' AS commander_legal,
-    c.edhrec_rank
-"""
 
 _JOIN_ON_EMBEDDING_ID = """
     JOIN cards c
@@ -62,9 +52,23 @@ _JOIN_ON_EMBEDDING_ID = """
 NAME_CANDIDATES = 25
 TEXT_CANDIDATES = 50
 
+# How many name-vector / RapidFuzz neighbours to consider before floor+gap.
+# High enough that a typo of a large character line (Ajani, Jace) is not
+# truncated before the gap filter runs.
+FUZZY_NAME_POOL = 75
+
 # Floor for accepting a fuzzy name match, on rapidfuzz's 0-100 WRatio scale.
 # Measured separation: genuine misspellings land at 81-100, nonsense at 30-60.
 MIN_NAME_SIMILARITY = 70
+
+# After the floor, keep only scores within this many points of the best hit so
+# a bad typo does not surface an entire neighbourhood of weak neighbours.
+NAME_MATCH_GAP = 10
+
+# Unique fuzzy hits at or above this skip the picker (e.g. Lightnin Bolt → Lightning
+# Bolt at ~96). Weaker unique hits still ask the user — Narest → Narstad Scrapper
+# at ~82 must not silently become a seed.
+FUZZY_AUTO_ACCEPT = 90
 
 
 def _build_filters(
@@ -135,24 +139,6 @@ def _build_filters(
     return clauses, params
 
 
-def dedupe_cards(rows: list[dict]) -> list[dict]:
-    """
-    Keep the best-ranked face of each card, preserving order.
-
-    Multi-faced cards store one row per face, so an unfiltered result set can
-    show the same card several times. Also used to union the per-ability
-    searches on the seed-card path.
-    """
-    seen: set[str] = set()
-    unique = []
-    for row in rows:
-        oracle_id = row["scryfall_oracle_id"]
-        if oracle_id not in seen:
-            seen.add(oracle_id)
-            unique.append(row)
-    return unique
-
-
 def _vector_search(source: str, text: str, k: int, filters: dict) -> list[dict]:
     clauses, params = _build_filters(**filters)
     params["qvec"] = json.dumps(embed_query(text))
@@ -166,7 +152,7 @@ def _vector_search(source: str, text: str, k: int, filters: dict) -> list[dict]:
 
     rows = query(
         f"""
-        SELECT {_CARD_COLUMNS},
+        SELECT {CARD_COLUMNS},
                e.chunk_text,
                1 - (e.embedding <=> %(qvec)s::vector) AS similarity
         FROM embeddings e
@@ -233,7 +219,7 @@ def filter_cards(k: int = 50, **filters) -> list[dict]:
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     rows = query(
         f"""
-        SELECT {_CARD_COLUMNS}
+        SELECT {CARD_COLUMNS}
         FROM cards c
         {where}
         ORDER BY c.edhrec_rank NULLS LAST, c.name, c.face_index
@@ -242,19 +228,6 @@ def filter_cards(k: int = 50, **filters) -> list[dict]:
         params,
     )
     return dedupe_cards(rows)[:k]
-
-
-def lookup_card_exact(name: str) -> list[dict]:
-    """Case-insensitive exact match on the full card name."""
-    return query(
-        f"""
-        SELECT {_CARD_COLUMNS}
-        FROM cards c
-        WHERE lower(c.name) = lower(%(name)s)
-        ORDER BY c.face_index
-        """,
-        {"name": name},
-    )
 
 
 # --------------------------------------------------------------------------- #
@@ -296,55 +269,87 @@ def _lexical_similarity(target: str, card: dict) -> float:
     return max(fuzz.WRatio(target, full), fuzz.WRatio(target, face))
 
 
-def resolve_card(name: str) -> dict | None:
+def _fuzzy_seed_candidates(name: str) -> tuple[list[dict], float | None]:
     """
-    Resolve a user-supplied card name to a single card.
+    Union name-vector search with lexical fuzzy matches.
 
-    Tries exact match first, then unions semantic search over `card_name` with
-    lexical fuzzy matching over every card name. The two disagree usefully:
-    vector search finds `rhystic` → Rhystic Study, fuzzy matching finds
-    `Chaterfang` → Chatterfang, Squirrel General, and neither finds both.
+    Apply floor, then gap from the best score. Every unique card that survives
+    is returned — no artificial top-N (same idea as the contains picker).
     """
-    if not name:
-        return None
-
-    exact = lookup_card_exact(name)
-    if exact:
-        return exact[0]
-
-    candidates = search_card_name(name, k=NAME_CANDIDATES)
+    candidates = search_card_name(name, k=FUZZY_NAME_POOL)
     known = {row["name"] for row in candidates}
-    for fuzzy_name in _fuzzy_name_matches(name):
+    for fuzzy_name in _fuzzy_name_matches(name, limit=FUZZY_NAME_POOL):
         if fuzzy_name not in known:
             rows = lookup_card_exact(fuzzy_name)
             if rows:
                 candidates.append(rows[0])
                 known.add(fuzzy_name)
 
-    if not candidates:
-        return None
-
     target = name.lower()
+    scored = [
+        (_lexical_similarity(target, card), card)
+        for card in candidates
+    ]
+    scored = [(score, card) for score, card in scored if score >= MIN_NAME_SIMILARITY]
+    if not scored:
+        return [], None
 
-    def score(card: dict) -> float:
-        """Blend lexical similarity with a substring and legality nudge."""
-        full = (card.get("name") or "").lower()
-        face = (card.get("face_name") or card.get("name") or "").lower()
-        return (
-            fuzz.WRatio(target, face) * 0.4
-            + fuzz.WRatio(target, full) * 0.4
-            + (15 if target in full else 0)
-            + (5 if card.get("commander_legal") else 0)
-        )
+    best = max(score for score, _ in scored)
+    kept = [
+        card
+        for score, card in scored
+        if best - score <= NAME_MATCH_GAP
+    ]
+    return sort_for_picker(dedupe_cards(kept)), best
 
-    best = max(candidates, key=score)
 
-    # Vector search always returns its k nearest neighbours, however far away
-    # they are, so without a floor a nonsense name resolves to an arbitrary
-    # card. Real misspellings score 81-100 here; nonsense scores 30-60.
-    if _lexical_similarity(target, best) < MIN_NAME_SIMILARITY:
-        return None
-    return best
+@dataclass(frozen=True)
+class SeedMatchResult:
+    """Cards that match a seed name, plus how they were found."""
+
+    cards: list[dict]
+    source: Literal["exact", "contains", "fuzzy"]
+    # Best lexical score among fuzzy candidates; else None.
+    best_score: float | None = None
+
+
+def find_seed_matches(name: str) -> SeedMatchResult:
+    """
+    Resolve a seed-card name to zero, one, or many cards.
+
+    Order: exact full title → case-insensitive contains on name/face_name →
+    fuzzy + name-vector fallback for typos (floor + gap over a large neighbour
+    pool). Callers show a picker when appropriate; `source` selects the prompt.
+    """
+    if not name or not name.strip():
+        return SeedMatchResult(cards=[], source="exact")
+
+    name = name.strip()
+
+    exact = lookup_card_exact(name)
+    if exact:
+        return SeedMatchResult(cards=dedupe_cards(exact), source="exact")
+
+    contains = lookup_cards_containing_name(name)
+    if contains:
+        return SeedMatchResult(cards=contains, source="contains")
+
+    cards, best = _fuzzy_seed_candidates(name)
+    return SeedMatchResult(cards=cards, source="fuzzy", best_score=best)
+
+
+def resolve_card(name: str) -> dict | None:
+    """
+    Resolve a user-supplied card name to a single card, or None.
+
+    Prefer `find_seed_matches` when the caller can show a picker. This helper
+    keeps the old one-winner behaviour for scripts and smoke tests: unique
+    match only; multiple matches return None rather than guessing.
+    """
+    matches = find_seed_matches(name)
+    if len(matches.cards) == 1:
+        return matches.cards[0]
+    return None
 
 
 def card_abilities(card: dict) -> list[str]:
@@ -416,3 +421,23 @@ def _format_card(index: int, card: dict) -> str:
 def format_candidates(rows: list[dict]) -> str:
     """Render candidates as labelled blocks for the ranker prompt."""
     return "\n".join(_format_card(i, row) for i, row in enumerate(rows, 1))
+
+
+# Re-export card lookups so callers can keep importing from search if needed.
+__all__ = [
+    "TEXT_CANDIDATES",
+    "FUZZY_AUTO_ACCEPT",
+    "SeedMatchResult",
+    "card_abilities",
+    "dedupe_cards",
+    "filter_cards",
+    "find_seed_matches",
+    "format_candidates",
+    "lookup_card_by_oracle_id",
+    "lookup_card_exact",
+    "lookup_cards_containing_name",
+    "resolve_card",
+    "search_card_name",
+    "search_card_text",
+    "search_rules",
+]

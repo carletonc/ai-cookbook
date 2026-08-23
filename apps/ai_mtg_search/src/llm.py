@@ -1,16 +1,20 @@
 import asyncio
 import json
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from langchain.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 
 from src.config import LLM_MODEL
+from src.db.cards import lookup_card_by_oracle_id
 from src.search import (
+    FUZZY_AUTO_ACCEPT,
     card_abilities,
     dedupe_cards,
+    find_seed_matches,
     format_candidates,
-    resolve_card,
     search_card_text,
 )
 
@@ -35,9 +39,21 @@ UNSUPPORTED_MESSAGE = (
 )
 
 UNRESOLVED_MESSAGE = (
-    "No card matching `{name}` was found, so there's no seed card to compare against.\n\n"
+    "We didn't find a card matching `{name}`.\n\n"
     "Check the spelling, or describe the effect you're looking for instead."
 )
+
+
+@dataclass
+class PipelineResult:
+    """Outcome of one pipeline step. `need_pick` pauses for the Streamlit picker."""
+
+    status: Literal["done", "need_pick", "unresolved", "unsupported"]
+    text: str | None = None
+    choices: list[dict] | None = None
+    name: str | None = None
+    # How the choices were found — selects picker copy ("contains" vs "fuzzy").
+    pick_kind: Literal["contains", "fuzzy"] | None = None
 
 
 def load_prompt(filepath: Path) -> str:
@@ -64,61 +80,123 @@ async def rank_and_explainer(user_input: str, context: str) -> str:
     return await _run_prompt(RANKER_PATH, query=user_input, context=context)
 
 
-def _seed_card_candidates(card_name: str) -> tuple[dict | None, list[dict]]:
-    """
-    Resolve a seed card, then search once per ability.
-
-    Splitting by ability is the fix for one-card-many-functions: a card that is
-    simultaneously ramp, lifegain and card draw averages into a single vector,
-    so each ability is searched on its own and the results unioned.
-    """
-    seed = resolve_card(card_name)
-    if seed is None:
-        return None, []
-
+def _candidates_for_seed(seed: dict) -> list[dict]:
+    """Search once per ability and exclude the seed from its own alternatives."""
     candidates: list[dict] = []
     for ability in card_abilities(seed):
         candidates.extend(search_card_text(ability, k=ABILITY_CANDIDATES))
 
-    # The seed card itself is not an alternative to itself.
-    candidates = [
+    return [
         card
         for card in dedupe_cards(candidates)
         if card["scryfall_oracle_id"] != seed["scryfall_oracle_id"]
-    ]
-    return seed, candidates[:MAX_CANDIDATES]
+    ][:MAX_CANDIDATES]
 
 
-async def pipeline(input_query: str) -> str:
-    """Route the query, retrieve candidates, then rank and explain them."""
+async def _rank_seed_path(input_query: str, seed: dict) -> PipelineResult:
+    candidates = _candidates_for_seed(seed)
+    if not candidates:
+        return PipelineResult(
+            status="done",
+            text=(
+                f"Nothing in the card pool matched alternatives to `{seed['name']}`.\n\n"
+                "Try describing the effect in different words."
+            ),
+        )
+
+    ranker_query = (
+        input_query + "\n\nTarget Card Context:\n" + format_candidates([seed])
+    )
+    text = await rank_and_explainer(
+        user_input=ranker_query,
+        context=format_candidates(candidates),
+    )
+    return PipelineResult(status="done", text=text)
+
+
+async def pipeline(
+    input_query: str,
+    *,
+    seed_oracle_id: str | None = None,
+) -> PipelineResult:
+    """
+    Route the query, retrieve candidates, then rank and explain them.
+
+    When `seed_oracle_id` is set, skip the planner and name resolution — the
+    user already picked a card from the disambiguation list.
+    """
+    if seed_oracle_id:
+        seed = lookup_card_by_oracle_id(seed_oracle_id)
+        if seed is None:
+            return PipelineResult(
+                status="unresolved",
+                text=UNRESOLVED_MESSAGE.format(name=seed_oracle_id),
+                name=seed_oracle_id,
+            )
+        return await _rank_seed_path(input_query, seed)
+
     plan = await query_planner(input_query)
     query_type = plan.get("query_type")
 
-    seed = None
     if query_type == "seed_card":
-        seed, candidates = _seed_card_candidates(plan.get("card_name"))
-        if seed is None:
-            return UNRESOLVED_MESSAGE.format(name=plan.get("card_name"))
+        card_name = plan.get("card_name") or ""
+        match = find_seed_matches(card_name)
+        if not match.cards:
+            return PipelineResult(
+                status="unresolved",
+                text=UNRESOLVED_MESSAGE.format(name=card_name),
+                name=card_name,
+            )
 
-    elif query_type == "text_search":
-        candidates = search_card_text(plan.get("search_text") or input_query, k=TEXT_CANDIDATES)
+        # Exact / contains: one hit continues; many open the family picker.
+        # Fuzzy: many (or one weak hit) open the "did you mean" picker; only a
+        # high-confidence unique typo auto-continues (Lightnin Bolt → Lightning Bolt).
+        if match.source == "fuzzy":
+            strong_unique = (
+                len(match.cards) == 1
+                and match.best_score is not None
+                and match.best_score >= FUZZY_AUTO_ACCEPT
+            )
+            if not strong_unique:
+                return PipelineResult(
+                    status="need_pick",
+                    choices=match.cards,
+                    name=card_name,
+                    pick_kind="fuzzy",
+                )
+            return await _rank_seed_path(input_query, match.cards[0])
 
-    else:
-        return UNSUPPORTED_MESSAGE.format(query=input_query)
+        if len(match.cards) > 1:
+            return PipelineResult(
+                status="need_pick",
+                choices=match.cards,
+                name=card_name,
+                pick_kind="contains",
+            )
+        return await _rank_seed_path(input_query, match.cards[0])
 
-    if not candidates:
-        return (
-            f"Nothing in the card pool matched `{input_query}`.\n\n"
-            "Try describing the effect in different words, or loosening any filters."
+    if query_type == "text_search":
+        candidates = search_card_text(
+            plan.get("search_text") or input_query,
+            k=TEXT_CANDIDATES,
         )
+        if not candidates:
+            return PipelineResult(
+                status="done",
+                text=(
+                    f"Nothing in the card pool matched `{input_query}`.\n\n"
+                    "Try describing the effect in different words, or loosening any filters."
+                ),
+            )
+        text = await rank_and_explainer(
+            user_input=input_query,
+            context=format_candidates(candidates),
+        )
+        return PipelineResult(status="done", text=text)
 
-    ranker_query = input_query
-    if seed is not None:
-        ranker_query += "\n\nTarget Card Context:\n" + format_candidates([seed])
-
-    return await rank_and_explainer(
-        user_input=ranker_query,
-        context=format_candidates(candidates),
+    return PipelineResult(
+        status="unsupported",
+        text=UNSUPPORTED_MESSAGE.format(query=input_query),
     )
 
 
@@ -130,8 +208,8 @@ if __name__ == "__main__":
     ]
 
     async def main():
-        results = await asyncio.gather(*(pipeline(q) for q in queries))
-        for query, output in zip(queries, results):
-            print(f"Input Query: {query}\nOutput:\n{output}\n---\n")
+        for q in queries:
+            result = await pipeline(q)
+            print(f"Input Query: {q}\nStatus: {result.status}\nOutput:\n{result.text}\n---\n")
 
     asyncio.run(main())
