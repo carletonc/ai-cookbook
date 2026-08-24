@@ -18,8 +18,9 @@ Copy `.env.example` to `.env` and set:
 
 | Variable | Required for | Notes |
 |---|---|---|
-| `DATABASE_URL` | Every search | Neon connection string. Use a **read-only** role (`SELECT` on `cards`, `embeddings`, `sync_log`). The Streamlit Cloud app needs the same value in secrets before merging to `main`. |
-| `OPENAI_API_KEY` | Planner + ranker | The Streamlit sidebar asks for this at runtime so a visitor's key is never stored. Put it in `.env` as well for notebooks and `scripts/eval_judge.py`. |
+| `DATABASE_URL` | Every search | Neon connection string. Use a **read-only** role (`SELECT` on `cards`, `embeddings`, `sync_log`). Put the same value in Streamlit secrets before merging to `main`. |
+| `GROQ_API_KEY` (or `LLM_API_KEY`) | Planner + ranker | App-held key — visitors do **not** paste one. Default host is Groq (`LLM_BASE_URL` / `LLM_MODEL=openai/gpt-oss-20b`). HF, OpenAI, and xAI work by changing `LLM_BASE_URL` + model + the matching key alias. |
+| `LLM_DAILY_REQUEST_CAP` | Optional | Soft process-local daily cap (default `800`; `0` disables). Over-cap and provider 429s show a friendly quota message. |
 
 Leave `EMBEDDING_BACKEND=fastembed` unless you are debugging parity against `sentence-transformers`. That model must stay MiniLM, 384-dim, cosine — the same weights `mtg-db` wrote into Neon.
 
@@ -27,11 +28,11 @@ Leave `EMBEDDING_BACKEND=fastembed` unless you are debugging parity against `sen
 cd apps/ai_mtg_search
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env          # then edit DATABASE_URL (and OPENAI_API_KEY for scripts)
-streamlit run app.py          # paste an OpenAI key in the sidebar, then search
+cp .env.example .env          # DATABASE_URL + GROQ_API_KEY
+streamlit run app.py
 ```
 
-Try `cards like Chatterfang` or `draw a card whenever an opponent casts a spell`.
+Use the **Try these** buttons in the UI, or type e.g. `cards like Chatterfang` / `draw a card whenever an opponent casts a spell`.
 
 ## Layout
 
@@ -47,5 +48,5 @@ data/                  Eval gold set; unused slang taxonomy
 ## Evaluation
 
 - `notebooks/eda.ipynb` — why vector queries force exact scans, and why ONNX embeddings match the stored vectors
-- `python -m scripts.eval_judge` — precision of returned cards (`OPENAI_API_KEY` in `.env`)
+- `python -m scripts.eval_judge` — precision of returned cards (needs an LLM key in `.env`)
 - `python -m scripts.eval_retrieval` — recall against `data/gold.json` (a tripwire; the labels are too thin to score retrieval well)

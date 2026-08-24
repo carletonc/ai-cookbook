@@ -5,27 +5,18 @@ import streamlit as st
 _UI_DIR = Path(__file__).resolve().parent
 _SNIPPET_LEN = 140
 
+# Clickable demos for visitors who do not know Magic well.
+EXAMPLE_QUERIES = [
+    "cards like Rhystic Study",
+    "draw a card when a creature enters",
+    "make squirrel tokens",
+    "counter target spell",
+]
+
 
 def load_ui_text(name: str) -> str:
     """Read a markdown (or other text) file sitting next to this module."""
     return (_UI_DIR / name).read_text(encoding="utf-8")
-
-
-def validate_openai_api_key(api_key):
-    """Return True if the key works. Warns in the sidebar when it doesn't."""
-    if not api_key:
-        # No key entered yet; do not warn
-        return False
-    try:
-        from openai import OpenAI
-
-        client = OpenAI(api_key=api_key)
-        client.models.list()
-        return True
-    except Exception:
-        with st.sidebar:
-            st.warning("Invalid OpenAI API key. Please check your key and try again.")
-        return False
 
 
 def picker_label(card: dict) -> str:
@@ -41,6 +32,31 @@ def picker_label(card: dict) -> str:
     if text:
         lines.append(text)
     return "\n".join(lines)
+
+
+def render_example_queries() -> None:
+    """Hint + buttons that fill the main search box via session state."""
+    st.caption(
+        "Name a card for alternatives, or describe an effect in plain English."
+    )
+    st.markdown("**Try these:**")
+    for row in (EXAMPLE_QUERIES[:2], EXAMPLE_QUERIES[2:]):
+        cols = st.columns(2)
+        for col, example in zip(cols, row):
+            with col:
+                if st.button(example, key=f"example_{example}"):
+                    st.session_state["search_query"] = example
+                    st.rerun()
+
+
+def format_timings(timings: dict[str, int] | None) -> str | None:
+    if not timings:
+        return None
+    order = ("planner", "resolve", "retrieve", "rank")
+    parts = [f"{key} {timings[key]}ms" for key in order if key in timings]
+    if not parts:
+        parts = [f"{k} {v}ms" for k, v in timings.items()]
+    return " · ".join(parts) if parts else None
 
 
 def render_seed_picker(
