@@ -1,18 +1,25 @@
-import streamlit as st
-from src.constants import METADATA_FIELDS
-from src.ui.config import TYPES, SUBTYPES, SUPERTYPES, COLORIDENTITY_DICT, LAYOUT
+from pathlib import Path
 
+import streamlit as st
+
+_UI_DIR = Path(__file__).resolve().parent
+_SNIPPET_LEN = 140
+
+
+def load_ui_text(name: str) -> str:
+    """Read a markdown (or other text) file sitting next to this module."""
+    return (_UI_DIR / name).read_text(encoding="utf-8")
 
 
 def validate_openai_api_key(api_key):
-    """Check if the OpenAI API key is valid. Returns True if valid, False otherwise. Shows a warning in the sidebar if invalid."""
+    """Return True if the key works. Warns in the sidebar when it doesn't."""
     if not api_key:
         # No key entered yet; do not warn
         return False
     try:
         from openai import OpenAI
+
         client = OpenAI(api_key=api_key)
-        # Make a minimal call (list models)
         client.models.list()
         return True
     except Exception:
@@ -21,50 +28,72 @@ def validate_openai_api_key(api_key):
         return False
 
 
-def init_sidebar():
-    """Render sidebar UI for filters and search settings. Returns number of results and Chroma filter dict."""
-    # --- Sidebar filters (after DB is loaded) ---
-    with st.sidebar:
-        st.header("Filters & Search Settings [WIP - not functioning]")
-        
-        # Number of results at the top
-        st.session_state['k'] = st.number_input(
-            "Number of Results", 
-            min_value=1, 
-            max_value=500, 
-            value=30, 
-            step=1
+def picker_label(card: dict) -> str:
+    """Uniform radio label: full name, type line, and a short oracle snippet."""
+    name = card.get("name") or "(unnamed)"
+    type_line = card.get("type_line") or ""
+    text = (card.get("oracle_text") or "").replace("\n", " ").strip()
+    if len(text) > _SNIPPET_LEN:
+        text = text[: _SNIPPET_LEN - 1].rstrip() + "…"
+    lines = [name]
+    if type_line:
+        lines.append(type_line)
+    if text:
+        lines.append(text)
+    return "\n".join(lines)
+
+
+def render_seed_picker(
+    choices: list[dict],
+    name: str | None,
+    *,
+    pick_kind: str | None = "contains",
+) -> str | None:
+    """
+    Show every matching seed card with the same row layout.
+
+    Returns the chosen `scryfall_oracle_id` when the user confirms, else None.
+    A filter box narrows the in-memory list for long character lines (Jace);
+    it does not change which cards are available.
+    """
+    if pick_kind == "fuzzy":
+        st.info(
+            f"We couldn't match **{name or 'that name'}** exactly. "
+            "Are any of these what you meant?"
         )
-        st.markdown("---")  # Divider
-        
-        # Initialize filter values dictionary
-        filter_values = {}
-        
-        # Core gameplay filters
-        st.subheader("Card Type")
-        filter_values['types'] = st.multiselect(METADATA_FIELDS['types']['display_name'], TYPES, accept_new_options=False)
-        filter_values['subtypes'] = st.multiselect(METADATA_FIELDS['subtypes']['display_name'], SUBTYPES, accept_new_options=False)
-        filter_values['supertypes'] = st.multiselect(METADATA_FIELDS['supertypes']['display_name'], SUPERTYPES, accept_new_options=False)
-        st.markdown("---")
-        
-        # Mana and Color filters
-        st.subheader("Mana & Colors")
-        filter_values['manaValue'] = st.text_input(METADATA_FIELDS['manaValue']['display_name'], "")
-        filter_values['colorIdentity'] = st.multiselect(METADATA_FIELDS['colorIdentity']['display_name'], list(COLORIDENTITY_DICT.keys()), accept_new_options=False)
-        filter_values['layout'] = st.multiselect(METADATA_FIELDS['layout']['display_name'], LAYOUT, accept_new_options=False)
-        st.markdown("---")
-        
-        # Commander-specific filters
-        st.subheader("Commander")
-        filter_values['legalities.commander'] = st.selectbox(
-            METADATA_FIELDS['legalities.commander']['display_name'],
-            ["Any", "Legal", "Not Legal"],
-            index=0
+    else:
+        st.info(
+            f"Several cards match **{name or 'that name'}**. "
+            "Pick the one you meant, then continue."
         )
-        filter_values['leadershipSkills.commander'] = st.selectbox(
-            METADATA_FIELDS['leadershipSkills.commander']['display_name'],
-            ["Any", True, False],
-            index=0
-        )
-    
-    return filter
+
+    filter_text = st.text_input(
+        "Filter this list",
+        key="seed_picker_filter",
+        placeholder="Type to narrow by name, type, or text…",
+    ).strip().lower()
+
+    visible = choices
+    if filter_text:
+        visible = [
+            card
+            for card in choices
+            if filter_text in picker_label(card).lower()
+        ]
+
+    if not visible:
+        st.warning("No cards in this list match that filter. Clear the filter to see all matches.")
+        return None
+
+    labels = [picker_label(card) for card in visible]
+    selected_label = st.radio(
+        "Which card?",
+        options=labels,
+        key="seed_picker_radio",
+        label_visibility="collapsed",
+    )
+    selected = visible[labels.index(selected_label)]
+
+    if st.button("Find alternatives", type="primary", key="seed_picker_confirm"):
+        return selected["scryfall_oracle_id"]
+    return None

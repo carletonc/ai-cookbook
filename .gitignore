@@ -1,7 +1,14 @@
 data/
 *.ipynb
+# This app commits its analysis notebooks and small JSON fixtures. The
+# repo-wide `data/` and `*.ipynb` rules would hide them otherwise.
+!apps/ai_mtg_search/notebooks/*.ipynb
+!apps/ai_mtg_search/data/
+!apps/ai_mtg_search/data/**
+apps/ai_mtg_search/docs/
 *.code-workspace
 .deepeval
+.eval_cache/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

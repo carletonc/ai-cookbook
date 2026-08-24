@@ -1,86 +1,443 @@
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+"""
+Retrieval over Neon Postgres + pgvector.
+
+Composes structured SQL filters with vector search rather than folding metadata
+into one opaque index. Five decisions here come from measurements against the
+live database, reproducible with notebooks/eda.ipynb:
+
+- Every vector query runs `exact=True`. The shared IVFFlat index spans all
+  three embedding sources, so a `source`-filtered search loses recall, and the
+  planner only picks the index below roughly LIMIT 10 — approximate results
+  would come and go as `k` changed.
+- Ordering always carries a secondary key. Short chunks (`'Flash'`) produce
+  bit-identical distances across several cards.
+- `card_text` searches exclude empty chunks; 366 faces have no oracle text and
+  would otherwise match anything.
+- Name resolution tries exact title, then substring contains (for character
+  names like Narset), then unions vector search with lexical fuzzy matching.
+- Results collapse to one row per card, since multi-faced cards store one row
+  per face.
+"""
+
+import json
+import threading
+from dataclasses import dataclass
+from typing import Literal
 
 from rapidfuzz import fuzz, process
 
-# can delete this after development
-from dotenv import load_dotenv
-load_dotenv()
+from src.constants import (
+    SOURCE_CARD_NAME,
+    SOURCE_CARD_TEXT,
+    SOURCE_RULES,
+)
+from src.db.cards import (
+    CARD_COLUMNS,
+    dedupe_cards,
+    lookup_card_by_oracle_id,
+    lookup_card_exact,
+    lookup_cards_containing_name,
+    sort_for_picker,
+)
+from src.db.neon import query
+from src.embeddings import embed_query
+from src.utils.mtg_text import preprocess_oracle_text
 
-from src.db.vectorstore import get_vector_store
+_JOIN_ON_EMBEDDING_ID = """
+    JOIN cards c
+      ON c.scryfall_oracle_id = split_part(e.id, ':', 1)
+     AND c.face_index = split_part(e.id, ':', 2)::int
+"""
 
-OUTPUT_FIELDS = ['cardName', 'faceName', 'type', 'manaCost', 'manaValue', 'colorIdentity', 'text', 'power', 'toughness', 'side', 'layout', 'legalities.commander']
-HEADER = '|'.join(OUTPUT_FIELDS) + '\n'
+NAME_CANDIDATES = 25
+TEXT_CANDIDATES = 50
 
-vectordb = get_vector_store()
+# How many name-vector / RapidFuzz neighbours to consider before floor+gap.
+# High enough that a typo of a large character line (Ajani, Jace) is not
+# truncated before the gap filter runs.
+FUZZY_NAME_POOL = 75
 
-def normalize(metadata, fields=OUTPUT_FIELDS, just_values=False):
-    output = {}
-    for field in fields:
-        output[field] = metadata.get(field, "")
-        if type(output[field]) == str:
-            output[field] = output[field].replace('\n', '\t')
-    return [v for v in output.values()] if just_values else output
+# Floor for accepting a fuzzy name match, on rapidfuzz's 0-100 WRatio scale.
+# Measured separation: genuine misspellings land at 81-100, nonsense at 30-60.
+MIN_NAME_SIMILARITY = 70
+
+# After the floor, keep only scores within this many points of the best hit so
+# a bad typo does not surface an entire neighbourhood of weak neighbours.
+NAME_MATCH_GAP = 10
+
+# Unique fuzzy hits at or above this skip the picker (e.g. Lightnin Bolt → Lightning
+# Bolt at ~96). Weaker unique hits still ask the user — Narest → Narstad Scrapper
+# at ~82 must not silently become a seed.
+FUZZY_AUTO_ACCEPT = 90
 
 
-def retrieve_by_text(
-    user_input: str, 
-    K: int = 50, 
-    output_fields: list = OUTPUT_FIELDS, 
-    ) -> str:
-    
-    results = vectordb.similarity_search_with_score(
-        query=user_input, 
-        k=K, 
+def _build_filters(
+    *,
+    types: list[str] | None = None,
+    subtypes: list[str] | None = None,
+    supertypes: list[str] | None = None,
+    keywords: list[str] | None = None,
+    types_all: list[str] | None = None,
+    subtypes_all: list[str] | None = None,
+    keywords_all: list[str] | None = None,
+    color_identity: list[str] | None = None,
+    layout: list[str] | None = None,
+    max_mana_value: float | None = None,
+    min_mana_value: float | None = None,
+    commander_legal: bool = False,
+    exclude_funny: bool = False,
+) -> tuple[list[str], dict]:
+    """
+    Translate filter kwargs into SQL predicates on `cards`.
+
+    Array columns come in two flavours because both are needed: `keywords`
+    overlaps (`&&`, any of), while `keywords_all` contains (`@>`, all of).
+    "Flying or vigilance" and "flying and vigilance" are different questions,
+    and only the second answers "creatures with flying and vigilance".
+
+    `color_identity` is contained the other way round (`<@`): asking for Dimir
+    means cards playable in Dimir, not cards that happen to include blue.
+    """
+    clauses: list[str] = []
+    params: dict = {}
+
+    any_of = {"types": types, "subtypes": subtypes, "supertypes": supertypes, "keywords": keywords}
+    all_of = {"types": types_all, "subtypes": subtypes_all, "keywords": keywords_all}
+
+    for column, values in any_of.items():
+        if values:
+            clauses.append(f"c.{column} && %({column}_any)s::text[]")
+            params[f"{column}_any"] = list(values)
+
+    for column, values in all_of.items():
+        if values:
+            clauses.append(f"c.{column} @> %({column}_all)s::text[]")
+            params[f"{column}_all"] = list(values)
+
+    if color_identity is not None:
+        clauses.append("c.color_identity <@ %(color_identity)s::text[]")
+        params["color_identity"] = list(color_identity)
+
+    if layout:
+        clauses.append("c.layout = ANY(%(layout)s)")
+        params["layout"] = list(layout)
+
+    if max_mana_value is not None:
+        clauses.append("c.mana_value <= %(max_mana_value)s")
+        params["max_mana_value"] = max_mana_value
+
+    if min_mana_value is not None:
+        clauses.append("c.mana_value >= %(min_mana_value)s")
+        params["min_mana_value"] = min_mana_value
+
+    if commander_legal:
+        clauses.append("(c.legalities->>'commander') = 'Legal'")
+
+    if exclude_funny:
+        clauses.append("NOT c.is_funny")
+
+    return clauses, params
+
+
+def _vector_search(source: str, text: str, k: int, filters: dict) -> list[dict]:
+    clauses, params = _build_filters(**filters)
+    params["qvec"] = json.dumps(embed_query(text))
+    # Over-fetch so face collapsing cannot shrink the result below k.
+    params["limit"] = k * 2
+
+    if source == SOURCE_CARD_TEXT:
+        clauses.append("length(e.chunk_text) > 0")
+    clauses.insert(0, "e.source = %(source)s")
+    params["source"] = source
+
+    rows = query(
+        f"""
+        SELECT {CARD_COLUMNS},
+               e.chunk_text,
+               1 - (e.embedding <=> %(qvec)s::vector) AS similarity
+        FROM embeddings e
+        {_JOIN_ON_EMBEDDING_ID}
+        WHERE {' AND '.join(clauses)}
+        ORDER BY e.embedding <=> %(qvec)s::vector, c.name, c.face_index
+        LIMIT %(limit)s
+        """,
+        params,
+        exact=True,
     )
-    
-    # normalize results
-    normalized_results = [normalize(result[0].metadata, fields=output_fields, just_values=True) for result in results]
-    
-    # filter for results & merge metadata 
-    return normalized_results # '\n'.join(['|'.join([str(r) for r in result]) for result in normalized_results])
+    return dedupe_cards(rows)[:k]
 
 
-def retrieve_by_name(
-        card_name, 
-        output_fields: list = OUTPUT_FIELDS,
-        k=3,
-        rerank=False
-    ):
-    
-    results = vectordb.similarity_search_with_score(
-        query=card_name,  # Empty string, since we're not doing semantic search
-        k=k,
+def search_card_text(query_text: str, k: int = TEXT_CANDIDATES, **filters) -> list[dict]:
+    """
+    Semantic search over preprocessed oracle text.
+
+    Queries containing mana or tap notation are preprocessed the same way the
+    ETL preprocessed the documents, so `{T}` lands near "Tap (tap this
+    permanent)" instead of nowhere.
+    """
+    if "{" in query_text:
+        query_text = preprocess_oracle_text(query_text)
+    return _vector_search(SOURCE_CARD_TEXT, query_text, k, filters)
+
+
+def search_card_name(query_text: str, k: int = NAME_CANDIDATES, **filters) -> list[dict]:
+    """Semantic search over card names — handles paraphrase and most misspellings."""
+    return _vector_search(SOURCE_CARD_NAME, query_text, k, filters)
+
+
+def search_rules(query_text: str, k: int = 5) -> list[dict]:
+    """
+    Search the comprehensive rules and glossary.
+
+    Available but not wired into the router, which still declines rules
+    questions. Useful for expanding a query into keywords before a card search.
+    """
+    return query(
+        """
+        SELECT e.id, e.chunk_text,
+               1 - (e.embedding <=> %(qvec)s::vector) AS similarity
+        FROM embeddings e
+        WHERE e.source = %(source)s
+        ORDER BY e.embedding <=> %(qvec)s::vector, e.id
+        LIMIT %(limit)s
+        """,
+        {
+            "qvec": json.dumps(embed_query(preprocess_oracle_text(query_text) if "{" in query_text else query_text)),
+            "source": SOURCE_RULES,
+            "limit": k,
+        },
+        exact=True,
     )
-    
-    # normalize results
-    normalized_results = [normalize(result[0].metadata, fields=output_fields) for result in results]
-    scores = [result[-1] for result in results]
-    
-    card_name_lower = card_name.lower()
-
-    def hybrid_score(card):
-        # exact match boost
-        exact_match = 10 if card_name_lower in card['name'].lower() else 0
-        # fuzz ratio on full combined name
-        name_score = fuzz.ratio(card_name_lower, card['name'].lower())
-        # fuzz ratio on face name (exact face)
-        face_name_score = fuzz.ratio(card_name_lower, card['faceName'].lower())
-        # Weighted average or max - you can tweak weights here
-        legality_score = 10 if card['legalities.commander'] == 'Legal' else 0 
-        return (face_name_score * 0.4) + (name_score * 0.2) + legality_score
-
-    # hybrid name score based on best match
-    best_match = max((normalized_results), key=hybrid_score) if rerank else normalized_results[0]
-    return best_match # '|'.join([v for v in best_match.values()]) 
 
 
+def filter_cards(k: int = 50, **filters) -> list[dict]:
+    """Structured lookup with no vector component, ordered by EDHREC popularity."""
+    clauses, params = _build_filters(**filters)
+    # Over-fetch so collapsing the faces of multi-faced cards cannot drop the
+    # result below k.
+    params["limit"] = k * 2
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    rows = query(
+        f"""
+        SELECT {CARD_COLUMNS}
+        FROM cards c
+        {where}
+        ORDER BY c.edhrec_rank NULLS LAST, c.name, c.face_index
+        LIMIT %(limit)s
+        """,
+        params,
+    )
+    return dedupe_cards(rows)[:k]
 
-if __name__ == "__main__":
-    # test it
-    names = ['Rhystic Study', 'Delver of Secrets', 'Chatterfang']
-    for n in names:
-        a = retrieve_by_name(n, rerank=False)
-        print(len(a))
-        print(a, '\n')
+
+# --------------------------------------------------------------------------- #
+#  Name resolution                                                            #
+# --------------------------------------------------------------------------- #
+
+_name_cache: list[str] | None = None
+_name_cache_lock = threading.Lock()
+
+
+def _all_card_names() -> list[str]:
+    """
+    Every distinct card name, cached for the process lifetime.
+
+    ~35k names, about a second to fetch. `pg_trgm` would let Postgres do this
+    instead, but it is not installed and this app has no DDL rights.
+    """
+    global _name_cache
+    with _name_cache_lock:
+        if _name_cache is None:
+            _name_cache = [row["name"] for row in query("SELECT DISTINCT name FROM cards")]
+    return _name_cache
+
+
+def _fuzzy_name_matches(name: str, limit: int = 10) -> list[str]:
+    return [
+        match
+        for match, score, _ in process.extract(
+            name, _all_card_names(), scorer=fuzz.WRatio, limit=limit
+        )
+        if score >= MIN_NAME_SIMILARITY
+    ]
+
+
+def _lexical_similarity(target: str, card: dict) -> float:
+    """Best string similarity between the query and either name the card carries."""
+    full = (card.get("name") or "").lower()
+    face = (card.get("face_name") or card.get("name") or "").lower()
+    return max(fuzz.WRatio(target, full), fuzz.WRatio(target, face))
+
+
+def _fuzzy_seed_candidates(name: str) -> tuple[list[dict], float | None]:
+    """
+    Union name-vector search with lexical fuzzy matches.
+
+    Apply floor, then gap from the best score. Every unique card that survives
+    is returned — no artificial top-N (same idea as the contains picker).
+    """
+    candidates = search_card_name(name, k=FUZZY_NAME_POOL)
+    known = {row["name"] for row in candidates}
+    for fuzzy_name in _fuzzy_name_matches(name, limit=FUZZY_NAME_POOL):
+        if fuzzy_name not in known:
+            rows = lookup_card_exact(fuzzy_name)
+            if rows:
+                candidates.append(rows[0])
+                known.add(fuzzy_name)
+
+    target = name.lower()
+    scored = [
+        (_lexical_similarity(target, card), card)
+        for card in candidates
+    ]
+    scored = [(score, card) for score, card in scored if score >= MIN_NAME_SIMILARITY]
+    if not scored:
+        return [], None
+
+    best = max(score for score, _ in scored)
+    kept = [
+        card
+        for score, card in scored
+        if best - score <= NAME_MATCH_GAP
+    ]
+    return sort_for_picker(dedupe_cards(kept)), best
+
+
+@dataclass(frozen=True)
+class SeedMatchResult:
+    """Cards that match a seed name, plus how they were found."""
+
+    cards: list[dict]
+    source: Literal["exact", "contains", "fuzzy"]
+    # Best lexical score among fuzzy candidates; else None.
+    best_score: float | None = None
+
+
+def find_seed_matches(name: str) -> SeedMatchResult:
+    """
+    Resolve a seed-card name to zero, one, or many cards.
+
+    Order: exact full title → case-insensitive contains on name/face_name →
+    fuzzy + name-vector fallback for typos (floor + gap over a large neighbour
+    pool). Callers show a picker when appropriate; `source` selects the prompt.
+    """
+    if not name or not name.strip():
+        return SeedMatchResult(cards=[], source="exact")
+
+    name = name.strip()
+
+    exact = lookup_card_exact(name)
+    if exact:
+        return SeedMatchResult(cards=dedupe_cards(exact), source="exact")
+
+    contains = lookup_cards_containing_name(name)
+    if contains:
+        return SeedMatchResult(cards=contains, source="contains")
+
+    cards, best = _fuzzy_seed_candidates(name)
+    return SeedMatchResult(cards=cards, source="fuzzy", best_score=best)
+
+
+def resolve_card(name: str) -> dict | None:
+    """
+    Resolve a user-supplied card name to a single card, or None.
+
+    Prefer `find_seed_matches` when the caller can show a picker. This helper
+    keeps the old one-winner behaviour for scripts and smoke tests: unique
+    match only; multiple matches return None rather than guessing.
+    """
+    matches = find_seed_matches(name)
+    if len(matches.cards) == 1:
+        return matches.cards[0]
+    return None
+
+
+def card_abilities(card: dict) -> list[str]:
+    """
+    Split a card's oracle text into individual abilities, preprocessed.
+
+    This is the fix for one-card-many-functions: a card that ramps, gains life
+    and draws blurs into a single vector, so each ability is searched
+    separately. Preprocessing is required — raw oracle text is full of `{T}`
+    and `{2}{R}` notation, while the document vectors hold the expanded form.
+    """
+    text = card.get("oracle_text")
+    if not text:
+        return []
+    clean = preprocess_oracle_text(text, card_name=card.get("name"))
+    return [line.strip() for line in clean.split("\n") if line.strip()]
+
+
+# --------------------------------------------------------------------------- #
+#  Presentation                                                               #
+# --------------------------------------------------------------------------- #
+
+def _combat_stats(card: dict) -> str | None:
+    if card.get("power") is not None or card.get("toughness") is not None:
+        return f"{card.get('power') or '?'}/{card.get('toughness') or '?'}"
+    if card.get("loyalty") is not None:
+        return f"loyalty {card['loyalty']}"
+    return None
+
+
+def _format_card(index: int, card: dict) -> str:
+    """
+    Render one candidate as labelled lines.
+
+    Deliberately not a delimiter-separated table: oracle text genuinely
+    contains '|' (d20 roll outcomes and Station thresholds, e.g.
+    "1-6 | Add {R}{R}{R}{R}"), which in a pipe-delimited row silently becomes
+    extra columns and shifts every later field. Line breaks bound each field
+    instead, and the text is the last field on its line.
+    """
+    heading = f"{index}. {card['name']}"
+    face = card.get("face_name")
+    if face and face != card.get("name"):
+        heading += f"  [matched face: {face}]"
+
+    mana = card.get("mana_cost") or "no cost"
+    mana_value = card.get("mana_value")
+    if mana_value is not None:
+        mana += f" (mv {mana_value:g})"
+
+    fields = [
+        ("type", card.get("type_line")),
+        ("mana", mana),
+        ("colors", "/".join(card.get("color_identity") or []) or "colorless"),
+        ("stats", _combat_stats(card)),
+        ("keywords", ", ".join(card.get("keywords") or [])),
+        # Oracle text is internally newline-separated; flatten so one card
+        # stays one block and the labels remain unambiguous.
+        ("text", (card.get("oracle_text") or "").replace("\n", " / ")),
+        ("commander", "legal" if card.get("commander_legal") else "not legal"),
+        ("edhrec", card.get("edhrec_rank")),
+    ]
+
+    lines = [heading]
+    lines.extend(f"   {label}: {value}" for label, value in fields if value)
+    return "\n".join(lines)
+
+
+def format_candidates(rows: list[dict]) -> str:
+    """Render candidates as labelled blocks for the ranker prompt."""
+    return "\n".join(_format_card(i, row) for i, row in enumerate(rows, 1))
+
+
+# Re-export card lookups so callers can keep importing from search if needed.
+__all__ = [
+    "TEXT_CANDIDATES",
+    "FUZZY_AUTO_ACCEPT",
+    "SeedMatchResult",
+    "card_abilities",
+    "dedupe_cards",
+    "filter_cards",
+    "find_seed_matches",
+    "format_candidates",
+    "lookup_card_by_oracle_id",
+    "lookup_card_exact",
+    "lookup_cards_containing_name",
+    "resolve_card",
+    "search_card_name",
+    "search_card_text",
+    "search_rules",
+]

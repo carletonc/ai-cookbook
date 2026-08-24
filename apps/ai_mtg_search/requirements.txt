@@ -2,9 +2,14 @@
 streamlit==1.45.1
 langchain==0.3.25
 langchain-openai==0.3.23
-langchain-pinecone==0.2.11
 openai==1.88.0
 rapidfuzz==3.13.0
 python-dotenv==1.1.0
-pysqlite3-binary>=0.5.2
-protobuf<=3.20
+
+# Neon Postgres + pgvector. Read-only; document vectors come from the mtg-db repo.
+psycopg2-binary>=2.9
+
+# Query embedding via ONNX rather than torch. Same MiniLM weights, ~80MB instead
+# of ~1GB, which is what keeps this inside Streamlit Community Cloud's 1GB cap.
+# Verified equivalent to sentence-transformers by scripts/check_embedding_parity.py.
+fastembed>=0.8
