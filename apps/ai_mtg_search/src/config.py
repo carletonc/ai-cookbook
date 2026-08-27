@@ -23,7 +23,10 @@ EMBED_MODEL = os.getenv("HF_EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v
 EMBED_DIM = int(os.getenv("EMBED_DIM", "384"))
 EMBEDDING_BACKEND = os.getenv("EMBEDDING_BACKEND", "fastembed")
 
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4.1-nano")
+# OpenAI-compatible chat host. Defaults to Groq free-tier demo settings.
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1")
+LLM_MODEL = os.getenv("LLM_MODEL", "openai/gpt-oss-20b")
+LLM_DAILY_REQUEST_CAP = int(os.getenv("LLM_DAILY_REQUEST_CAP", "800"))
 
 
 def _from_streamlit_secrets(key: str) -> str | None:
@@ -47,5 +50,30 @@ def get_database_url() -> str:
     return url
 
 
+def get_llm_api_key() -> str | None:
+    """
+    Resolve the chat LLM API key (Groq / HF / OpenAI / xAI).
+
+    Prefer LLM_API_KEY, then common provider-specific names.
+    """
+    for key in (
+        "LLM_API_KEY",
+        "GROQ_API_KEY",
+        "HF_TOKEN",
+        "OPENAI_API_KEY",
+        "GROK_API_KEY",
+        "XAI_API_KEY",
+    ):
+        value = os.getenv(key) or _from_streamlit_secrets(key)
+        if value:
+            return value
+    return None
+
+
+def is_llm_configured() -> bool:
+    return bool(get_llm_api_key())
+
+
 def get_openai_api_key() -> str | None:
-    return os.getenv("OPENAI_API_KEY") or _from_streamlit_secrets("OPENAI_API_KEY")
+    """Backward-compatible alias used by eval scripts."""
+    return get_llm_api_key()

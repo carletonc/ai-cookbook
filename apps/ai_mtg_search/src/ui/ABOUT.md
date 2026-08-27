@@ -1,6 +1,4 @@
-# Agentic Search & Ranking for Magic: The Gathering
-
-## The Problem
+## Motivation
 
 An LLM answers from the average of its training data, and Magic is a small slice of that corpus, so a general-purpose model doesn't know the game's rules — it approximates them, fluently and wrongly. A bigger model doesn't change the mixture, and a model that self-corrects is correcting against the same thin prior without properly engineered context.
 

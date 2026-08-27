@@ -39,6 +39,8 @@ Classify the user input into exactly one of:
 - Broad strategy/build requests (“What commander should I build?”)
 - Marketplace/price-only requests
 - Rules adjudication or gameplay simulation
+- Nonsense / keyboard smash / gibberish with no MTG meaning (e.g., “asdfghjkl”, “zzzz”) — do not treat these as card names
+- Empty or whitespace-only input
 
 # Answer this query:
 {query}
