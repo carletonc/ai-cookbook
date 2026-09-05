@@ -2,9 +2,9 @@
 Read-only access to the Neon Postgres + pgvector card database.
 
 The `cards` and `embeddings` tables are written weekly by the external
-`mtg-db` ETL repo. This app never mutates them, so every statement runs
-inside a read-only transaction — that holds even while the connection
-string still carries the ETL role's credentials.
+`mtg-db` ETL repo. This app never mutates them: prefer a read-only Neon
+role via `DATABASE_URL_READONLY`, and every statement also runs inside a
+read-only transaction as defense in depth.
 
 Connections are opened lazily. Neon scales to zero, so an idle pool
 accumulates dead sockets and the first query after a cold start is slow;

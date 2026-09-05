@@ -33,7 +33,8 @@ def dedupe_cards(rows: list[dict]) -> list[dict]:
     Keep the best-ranked face of each card, preserving order.
 
     Multi-faced cards store one row per face, so an unfiltered result set can
-    show the same card several times.
+    show the same card several times. First occurrence wins — callers that
+    `ORDER BY` distance should pass rows in that order.
     """
     seen: set[str] = set()
     unique = []
@@ -43,6 +44,61 @@ def dedupe_cards(rows: list[dict]) -> list[dict]:
             seen.add(oracle_id)
             unique.append(row)
     return unique
+
+
+def merge_search_hits(rows: list[dict], *, limit: int | None = None) -> list[dict]:
+    """
+    Collapse hits from several vector queries to one row per card.
+
+    The same oracle id can appear in more than one batch (e.g. one search per
+    ability). Keep the higher `similarity`; ties keep the earlier row. The
+    caller never sees duplicate oracle ids.
+    """
+    best: dict[str, dict] = {}
+    order: list[str] = []
+    for row in rows:
+        oracle_id = row["scryfall_oracle_id"]
+        prev = best.get(oracle_id)
+        if prev is None:
+            best[oracle_id] = row
+            order.append(oracle_id)
+            continue
+        prev_sim = prev.get("similarity")
+        new_sim = row.get("similarity")
+        if new_sim is not None and (prev_sim is None or float(new_sim) > float(prev_sim)):
+            best[oracle_id] = row
+    merged = [best[oid] for oid in order]
+    if limit is not None:
+        return merged[:limit]
+    return merged
+
+
+def _norm_oracle_text(card: dict) -> str:
+    return " ".join((card.get("oracle_text") or "").split()).lower()
+
+
+def drop_equivalent_to_seed(seed: dict, cards: list[dict]) -> list[dict]:
+    """
+    Drop the seed and color-shifted / playtest copies of the same rules text.
+
+    Dedupe is by oracle id only; White Rhystic Study is a different id with
+    the same oracle text, so it would otherwise rank as the best alternative.
+    """
+    seed_id = seed.get("scryfall_oracle_id")
+    seed_text = _norm_oracle_text(seed)
+    kept = []
+    for card in cards:
+        if card.get("scryfall_oracle_id") == seed_id:
+            continue
+        if seed_text and _norm_oracle_text(card) == seed_text:
+            continue
+        kept.append(card)
+    return kept
+
+
+def legal_cards_first(cards: list[dict]) -> list[dict]:
+    """Stable: commander-legal rows stay in order, then the rest."""
+    return sorted(cards, key=lambda card: 0 if card.get("commander_legal") else 1)
 
 
 def sort_for_picker(rows: list[dict]) -> list[dict]:

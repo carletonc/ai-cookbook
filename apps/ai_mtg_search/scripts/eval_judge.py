@@ -12,11 +12,15 @@ of the cards retrieval actually returns, how many satisfy the query? An LLM
 judge reads each candidate's real fields and rules on it, so precision scales
 past 8 positives without relabelling anything.
 
+The judge uses the same OpenAI-compatible settings as the app (`LLM_BASE_URL`,
+`LLM_MODEL`, `GROQ_API_KEY` / aliases) so free-tier Groq works without an
+OpenAI key.
+
 Judgements are cached in .eval_cache/judge.json, keyed by query, card and model,
 so reruns after a retrieval change only pay for candidates not seen before.
 
 Usage:
-    python -m scripts.eval_judge [--k 20] [--limit N] [--model gpt-4.1-mini]
+    python -m scripts.eval_judge [--k 20] [--limit N] [--model openai/gpt-oss-20b]
 """
 
 import argparse
@@ -28,7 +32,7 @@ from pathlib import Path
 
 from openai import OpenAI
 
-from src.config import get_openai_api_key
+from src.config import LLM_BASE_URL, LLM_MODEL, get_llm_api_key
 from src.search import search_card_text
 
 APP_DIR = Path(__file__).resolve().parent.parent
@@ -101,7 +105,8 @@ def judge(client, model: str, query: str, cards: list[dict], cache: dict) -> lis
                 {"role": "user", "content": JUDGE_INSTRUCTION.format(query=query, candidates=listing)},
             ],
         )
-        verdicts = json.loads(response.choices[0].message.content).get("verdicts", [])
+        content = response.choices[0].message.content or "{}"
+        verdicts = json.loads(content).get("verdicts", [])
         by_number = {v["n"]: bool(v.get("ok")) for v in verdicts if "n" in v}
         for n, (_, card) in enumerate(pending, 1):
             cache[_cache_key(query, card["name"], model)] = by_number.get(n, False)
@@ -113,18 +118,27 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--k", type=int, default=20)
     parser.add_argument("--limit", type=int, default=None)
-    parser.add_argument("--model", default="gpt-4.1-mini")
+    parser.add_argument(
+        "--model",
+        default=LLM_MODEL,
+        help=f"Chat model id (default: {LLM_MODEL} from env / Groq demo default)",
+    )
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 
-    api_key = get_openai_api_key()
+    api_key = get_llm_api_key()
     if not api_key:
-        print("OPENAI_API_KEY is not set; add it to .env to run the judge.")
+        print(
+            "No LLM API key set. Add GROQ_API_KEY (or LLM_API_KEY) to .env "
+            "to run the judge."
+        )
         return 2
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=api_key, base_url=LLM_BASE_URL)
     cache = _load_cache()
     gold = json.loads(GOLD_PATH.read_text())[: args.limit]
+
+    print(f"Judge host: {LLM_BASE_URL}  model: {args.model}")
 
     rows = []
     try:
