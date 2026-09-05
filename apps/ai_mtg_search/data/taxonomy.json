@@ -1,192 +1,2392 @@
 {
-    "card_advantage": {
-        "subtypes": [
+  "meta": {
+    "purpose": "Single MTG taxonomy. aliases + oracle_hints are for query expansion; keywords + card_text_regex + examples are for labeling and eval. Not on the live search path yet.",
+    "regex": "card_text_regex values are Python patterns, matched case-insensitively against printed oracle text (with {T} notation, not the MiniLM-preprocessed form)."
+  },
+  "abbreviations": {
+    "ETB": "enters the battlefield",
+    "LTB": "leaves the battlefield",
+    "CMC": "mana value",
+    "MV": "mana value",
+    "P/T": "power and toughness",
+    "GY": "graveyard",
+    "WUBRG": "white blue black red green",
+    "cEDH": "competitive commander",
+    "EDH": "commander"
+  },
+  "color_groups": {
+    "azorius": [
+      "W",
+      "U"
+    ],
+    "dimir": [
+      "U",
+      "B"
+    ],
+    "rakdos": [
+      "B",
+      "R"
+    ],
+    "gruul": [
+      "R",
+      "G"
+    ],
+    "selesnya": [
+      "G",
+      "W"
+    ],
+    "orzhov": [
+      "W",
+      "B"
+    ],
+    "izzet": [
+      "U",
+      "R"
+    ],
+    "golgari": [
+      "B",
+      "G"
+    ],
+    "boros": [
+      "R",
+      "W"
+    ],
+    "simic": [
+      "G",
+      "U"
+    ],
+    "bant": [
+      "W",
+      "U",
+      "G"
+    ],
+    "esper": [
+      "W",
+      "U",
+      "B"
+    ],
+    "grixis": [
+      "U",
+      "B",
+      "R"
+    ],
+    "jund": [
+      "B",
+      "R",
+      "G"
+    ],
+    "naya": [
+      "R",
+      "G",
+      "W"
+    ],
+    "abzan": [
+      "W",
+      "B",
+      "G"
+    ],
+    "jeskai": [
+      "U",
+      "R",
+      "W"
+    ],
+    "sultai": [
+      "B",
+      "G",
+      "U"
+    ],
+    "mardu": [
+      "R",
+      "W",
+      "B"
+    ],
+    "temur": [
+      "G",
+      "U",
+      "R"
+    ]
+  },
+  "taxonomy": [
+    {
+      "key": "card_advantage",
+      "name": "Card Advantage",
+      "aliases": [
+        "card advantage",
+        "CA",
+        "card draw",
+        "card selection"
+      ],
+      "description": "Card advantage: gaining access to more cards than your opponent. Includes direct draw, tutoring, impulse draw (exile-based), cheating cards into play, card filtering (loot, rummage, surveil, scry), and recursion from the graveyard.",
+      "oracle_hints": [],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": [
+        {
+          "key": "card_advantage.draw",
+          "name": "Draw",
+          "aliases": [
+            "draw",
+            "card draw",
+            "draw spells"
+          ],
+          "description": "Direct card draw \u2014 adding cards from library to hand.",
+          "oracle_hints": [
+            "draw a card",
+            "draw cards",
+            "draw two",
+            "draw three"
+          ],
+          "keywords": [
+            "Investigate"
+          ],
+          "card_text_regex": [
+            "draw \\d+ cards?",
+            "each (player|opponent) draws",
+            "whenever .* draw a card",
+            "you may draw (\\d+) cards?"
+          ],
+          "examples": [
+            "Rhystic Study",
+            "Esper Sentinel",
+            "Beast Whisperer",
+            "Toski, Bearer of Secrets",
+            "Bident of Thassa",
+            "Kindred Discovery",
+            "The One Ring",
+            "Mystic Remora",
+            "Ohran Frostfang",
+            "Ledger Shredder"
+          ],
+          "children": [
             {
-                "subtype": "Draw",
-                "keywords": ["Investigate"],
-                "card_text_regex": ["/draw \\d+ cards?/i", "/each (player|opponent) draws/i", "/whenever .* draw a card/i", "/you may draw (\\d+) cards?/i"],
-                "examples": ["Rhystic Study", "Esper Sentinel", "Beast Whisperer", "Toski, Bearer of Secrets", "Bident of Thassa", "Kindred Discovery", "The One Ring", "Mystic Remora", "Ohran Frostfang", "Ledger Shredder"]
+              "key": "card_advantage.draw.cantrip",
+              "name": "Cantrip",
+              "aliases": [
+                "cantrip",
+                "cantrips",
+                "cycling"
+              ],
+              "description": "A cheap spell that replaces itself by drawing a card. Cycling (discard to draw) is a related mechanic.",
+              "oracle_hints": [
+                "draw a card",
+                "cycling"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
             },
             {
-                "subtype": "Impulse Draw",
-                "keywords": [],
-                "card_text_regex": ["/exile the top (\\d+) cards (?:of your library)?/i", "/until (?:end of turn|your next turn),? you may play (?:cards exiled|them)/i", "/play (?:this card|them) (?:this turn|until)/i", "/impulse draw/i"],
-                "examples": ["Light Up the Stage", "Outpost Siege", "Valakut Exploration", "Faldorn, Dread Wolf Herald", "Robber of the Rich", "Chandra, Torch of Defiance", "Etali, Primal Storm", "Fable of the Mirror-Breaker", "Experimental Frenzy", "Throes of Chaos"]
-            },
-            {
-                "subtype": "Wheeling",
-                "keywords": [],
-                "card_text_regex": ["/discard (?:your|their) hand/i", "/shuffle (?:your|their) hand into (?:their|your) library/i", "/draw (?:seven|\\d+) cards?/i", "/each player discards/i"],
-                "examples": ["Wheel of Fortune", "Windfall", "Echo of Eons", "Day's Undoing", "Teferi's Puzzle Box", "Whirlpool Warrior", "Jace's Archivist", "Magus of the Wheel", "Time Reversal", "Reforge the Soul"]
-            },
-            {
-                "subtype": "Tutoring",
-                "keywords": [],
-                "card_text_regex": ["/search (?:your|their) library for (?:a|\\d+) (?:land|creature)/i"],
-                "examples": ["Demonic Tutor", "Green Sun's Zenith", "Sylvan Tutor", "Chord of Calling", "Enlightened Tutor", "Gamble", "Imperial Recruiter", "Fabricate", "Profane Tutor", "Finale of Devastation"]
-            },
-            {
-                "subtype": "Top Deck",
-                "keywords": ["Scry", "Surveil"],
-                "card_text_regex": ["/scry \\d+/i", "/surveil \\d+/i"],
-                "examples": ["Brainstorm", "Ponder", "Sensei's Divining Top", "Sylvan Library", "Oracle of Mul Daya", "Courser of Kruphix", "The Reality Chip", "Soothsaying", "Mirri's Guile", "Future Sight"]
-            },
-            {
-                "subtype": "Discard/Mill",
-                "keywords": ["Dredge", "Madness", "Surveil"],
-                "card_text_regex": ["/mill \\d+ cards?/i", "/discards? \\d+ cards?/i"],
-                "examples": ["Faithless Looting", "Mesmeric Orb", "Glimpse the Unthinkable", "Underworld Breach", "Stitcher's Supplier", "Hedron Crab", "Tasha's Hideous Laughter", "Burning Inquiry", "Vohar, Vodalian Desecrator", "Altar of Dementia"]
-            },
-            {
-                "subtype": "Recursion",
-                "keywords": ["Flashback", "Unearth", "Escape"],
-                "card_text_regex": ["/return (?:target|a) (?:creature|card) from your graveyard/i"],
-                "examples": ["Eternal Witness", "Sun Titan", "Reanimate", "Meren of Clan Nel Toth", "Phyrexian Reclamation", "Past in Flames", "Sevinne's Reclamation", "Chainer, Dementia Master", "Dread Return", "Timeless Witness"]
-            },
-            {
-                "subtype": "Cheating into Play",
-                "keywords": ["Cascade", "Discover"],
-                "card_text_regex": ["/without paying its mana cost/i", "/put (?:a|that) card onto the battlefield/i"],
-                "examples": ["Sneak Attack", "Ojer Kaslam", "Through the Breach", "Aetherworks Marvel", "Genesis Wave", "Indomitable Creativity", "Show and Tell", "Elvish Piper", "Satoru Umezawa", "Etali, Primal Conqueror"]
+              "key": "card_advantage.draw.symmetric",
+              "name": "Symmetric Draw",
+              "aliases": [
+                "wheel",
+                "wheeling",
+                "windfall"
+              ],
+              "description": "Each player discards their hand and draws a new one. Named after Wheel of Fortune.",
+              "oracle_hints": [
+                "each player discards",
+                "each player draws",
+                "each player shuffles"
+              ],
+              "keywords": [],
+              "card_text_regex": [
+                "discard (?:your|their) hand",
+                "shuffle (?:your|their) hand into (?:their|your) library",
+                "draw (?:seven|\\d+) cards?",
+                "each player discards"
+              ],
+              "examples": [
+                "Wheel of Fortune",
+                "Windfall",
+                "Echo of Eons",
+                "Day's Undoing",
+                "Teferi's Puzzle Box",
+                "Whirlpool Warrior",
+                "Jace's Archivist",
+                "Magus of the Wheel",
+                "Time Reversal",
+                "Reforge the Soul"
+              ],
+              "children": []
             }
-        ]
-    },
-    "ramp": {
-        "subtypes": [
+          ]
+        },
+        {
+          "key": "card_advantage.tutor",
+          "name": "Tutor",
+          "aliases": [
+            "tutor",
+            "tutoring",
+            "search"
+          ],
+          "description": "Search your library for a specific card. Named after Demonic Tutor. Subtypes based on where the card goes.",
+          "oracle_hints": [
+            "search your library"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "search (?:your|their) library for (?:a|\\d+) (?:land|creature)"
+          ],
+          "examples": [
+            "Demonic Tutor",
+            "Green Sun's Zenith",
+            "Sylvan Tutor",
+            "Chord of Calling",
+            "Enlightened Tutor",
+            "Gamble",
+            "Imperial Recruiter",
+            "Fabricate",
+            "Profane Tutor",
+            "Finale of Devastation"
+          ],
+          "children": [
             {
-                "subtype": "Land Ramp",
-                "keywords": [],
-                "card_text_regex": ["/search (?:your|their) library for (?:a|\\d+) land/i"],
-                "examples": ["Cultivate", "Kodama's Reach", "Exploration", "Azusa, Lost but Seeking", "Sakura-Tribe Elder", "Harrow", "Solemn Simulacrum", "Tatyova, Benthic Druid", "Crucible of Worlds", "Scapeshift"]
+              "key": "card_advantage.tutor.to_hand",
+              "name": "Tutor to Hand",
+              "aliases": [
+                "tutor to hand"
+              ],
+              "description": "Search library, put card into hand.",
+              "oracle_hints": [
+                "search your library",
+                "put it into your hand"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
             },
             {
-                "subtype": "Mana Dorks",
-                "keywords": [],
-                "card_text_regex": ["/\\{T\\}: Add \\{[^}]+\\}/"],
-                "examples": ["Llanowar Elves", "Birds of Paradise", "Bloom Tender", "Priest of Titania", "Faeburrow Elder", "Marwyn, the Nurturer", "Selvala, Heart of the Wilds", "Joraga Treespeaker", "Ignoble Hierarch", "Lotus Cobra"]
+              "key": "card_advantage.tutor.to_top",
+              "name": "Tutor to Top",
+              "aliases": [
+                "topdeck tutor",
+                "vampiric tutor"
+              ],
+              "description": "Search library, put card on top.",
+              "oracle_hints": [
+                "search your library",
+                "put it on top"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
             },
             {
-                "subtype": "Mana Rocks",
-                "keywords": [],
-                "card_text_regex": ["/\\{T\\}: Add \\{[^}]+\\}/"],
-                "examples": ["Sol Ring", "Arcane Signet", "Mana Crypt", "Chromatic Lantern", "Gilded Lotus", "Thran Dynamo", "Fellwar Stone", "Commander's Sphere", "Hedron Archive", "Midnight Clock"]
+              "key": "card_advantage.tutor.to_battlefield",
+              "name": "Tutor to Battlefield",
+              "aliases": [
+                "cheat into play"
+              ],
+              "description": "Search library, put directly onto the battlefield.",
+              "oracle_hints": [
+                "search your library",
+                "put it onto the battlefield"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
             },
             {
-                "subtype": "Cost Reduction",
-                "keywords": ["Affinity", "Convoke"],
-                "card_text_regex": ["/costs? \\d+ less to cast/i"],
-                "examples": ["Goblin Electromancer", "Urza's Incubator", "Heartless Summoning", "Baral, Chief of Compliance", "Semblance Anvil", "Hazoret's Monument", "The Immortal Sun", "Cloud Key", "Oketra's Monument", "Jet Medallion"]
-            },
-            {
-                "subtype": "Fast Mana",
-                "keywords": [],
-                "card_text_regex": ["/add \\d+ mana/i"],
-                "examples": ["Dark Ritual", "Sol Ring", "Mana Crypt", "Jeweled Lotus", "Mana Vault", "Grim Monolith", "Lion's Eye Diamond", "Mox Opal", "Mox Diamond", "Ancient Tomb", "Cabal Ritual"]
-            },
-            {
-                "subtype": "Multipliers",
-                "keywords": [],
-                "card_text_regex": ["/double (?:the|your) (?:mana|tokens)/i", "/add (?:an additional|\\d+) mana/i", "/whenever you tap a land for mana/i"],
-                "examples": ["Nyxbloom Ancient", "Mana Reflection", "Zendikar Resurgent", "Vorinclex, Voice of Hunger", "Kinnan, Bonder Prodigy", "Nissa, Who Shakes the World", "Caged Sun", "Extraplanar Lens", "Gauntlet of Power", "Regal Behemoth"]
-            },
-            {
-                "subtype": "Rituals", 
-                "keywords": [], 
-                "card_text_regex": ["/add \\{[^}]+\\} for each (?:creature|permanent)/i", "/add \\d+ mana of any one color/i", "/sacrifice (?:a|X) (?:creature|permanent)/i"], 
-                "examples": ["Dark Ritual", "Seething Song", "Pyretic Ritual", "Desperate Ritual", "Cabal Ritual", "Battle Hymn", "Songs of the Damned", "Rain of Filth", "Culling the Weak", "Infernal Plunge"]
-            },
-            {
-                "subtype": "Treasures",
-                "keywords": [],
-                "card_text_regex": ["/create (?:a|\\d+) Treasure tokens?/i"],
-                "examples": ["Dockside Extortionist", "Smothering Tithe", "Ragavan, Nimble Pilferer", "Prosperous Partnership", "Bootleggers' Stash", "Deadly Dispute", "Pitiless Plunderer", "Xorn", "Gala Greeters", "Unexpected Windfall"]
+              "key": "card_advantage.tutor.entomb",
+              "name": "Entomb",
+              "aliases": [
+                "entomb",
+                "tutor to graveyard",
+                "buried alive"
+              ],
+              "description": "Search library, put into graveyard (for recursion).",
+              "oracle_hints": [
+                "search your library",
+                "put it into your graveyard"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
             }
-        ]
-    },
-    "interaction": {
-        "subtypes": [
+          ]
+        },
+        {
+          "key": "card_advantage.impulse",
+          "name": "Impulse Draw",
+          "aliases": [
+            "impulse draw",
+            "impulse",
+            "exile draw",
+            "red draw"
+          ],
+          "description": "Exile cards from the top of your library and cast them temporarily. Common in red.",
+          "oracle_hints": [
+            "exile the top",
+            "you may play",
+            "you may cast",
+            "until end of turn"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "exile the top (\\d+) cards (?:of your library)?",
+            "until (?:end of turn|your next turn),? you may play (?:cards exiled|them)",
+            "play (?:this card|them) (?:this turn|until)",
+            "impulse draw"
+          ],
+          "examples": [
+            "Light Up the Stage",
+            "Outpost Siege",
+            "Valakut Exploration",
+            "Faldorn, Dread Wolf Herald",
+            "Robber of the Rich",
+            "Chandra, Torch of Defiance",
+            "Etali, Primal Storm",
+            "Fable of the Mirror-Breaker",
+            "Experimental Frenzy",
+            "Throes of Chaos"
+          ],
+          "children": []
+        },
+        {
+          "key": "card_advantage.cheat",
+          "name": "Cheat into Play",
+          "aliases": [
+            "cheat",
+            "free cast",
+            "cheat into play"
+          ],
+          "description": "Put permanents onto the battlefield or cast spells without paying their mana cost. Cascade, Discover, Plot, Suspend, and Storm are the named methods.",
+          "oracle_hints": [
+            "without paying its mana cost",
+            "without paying their mana cost",
+            "put onto the battlefield"
+          ],
+          "keywords": [
+            "Cascade",
+            "Discover"
+          ],
+          "card_text_regex": [
+            "without paying its mana cost",
+            "put (?:a|that) card onto the battlefield"
+          ],
+          "examples": [
+            "Sneak Attack",
+            "Ojer Kaslam",
+            "Through the Breach",
+            "Aetherworks Marvel",
+            "Genesis Wave",
+            "Indomitable Creativity",
+            "Show and Tell",
+            "Elvish Piper",
+            "Satoru Umezawa",
+            "Etali, Primal Conqueror"
+          ],
+          "children": [
             {
-                "subtype": "Targeted Removal",
-                "keywords": ["Deathtouch"],
-                "card_text_regex": ["/destroy target (?:creature|permanent)/i", "/exile target (?:creature|permanent)/i", "/deals? \\d+ damage to target/i", "/sacrifice(?: a| that) (?:creature|permanent)/i"],
-                "examples": ["Swords to Plowshares", "Assassin's Trophy", "Dismember"]
+              "key": "card_advantage.cheat.cascade",
+              "name": "Cascade",
+              "aliases": [
+                "cascade",
+                "cascading"
+              ],
+              "description": "When you cast this, exile cards until you hit a cheaper spell and cast that without paying.",
+              "oracle_hints": [
+                "cascade",
+                "exile cards from the top of your library until you exile a nonland card that costs less"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
             },
             {
-                "subtype": "Board Wipes",
-                "keywords": ["Cleave"],
-                "card_text_regex": ["/destroy all (?:creatures|permanents)/i", "/exile all (?:creatures|permanents)/i", "/each player sacrifices (?:all|\\d+)/i", "/damage to each (?:creature|player)/i"],
-                "examples": ["Wrath of God", "Damnation", "Toxic Deluge", "Blasphemous Act", "Farewell", "Cyclonic Rift", "Austere Command", "Nevinyrral's Disk", "Urza's Ruinous Blast", "Decree of Annihilation"]
+              "key": "card_advantage.cheat.discover",
+              "name": "Discover",
+              "aliases": [
+                "discover",
+                "discover n"
+              ],
+              "description": "Exile cards from the top until you hit mana value N or less; cast it without paying or put it into hand.",
+              "oracle_hints": [
+                "discover",
+                "exile cards from the top of your library until you exile a nonland card with mana value"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
             },
             {
-                "subtype": "Counterspells",
-                "keywords": [],
-                "card_text_regex": ["/counter target (?:spell|ability)/i", "/unless (?:its|their) controller pays/i", "/no one may cast spells/i"],
-                "examples": ["Counterspell", "Force of Will", "Mana Drain", "Dovin's Veto", "Flusterstorm", "Swan Song", "Fierce Guardianship", "Mystic Confluence", "An Offer You Can't Refuse", "Drown in the Loch"]
+              "key": "card_advantage.cheat.plot",
+              "name": "Plot",
+              "aliases": [
+                "plot",
+                "plotting"
+              ],
+              "description": "Exile a card plotted and cast it on a later turn without paying its mana cost.",
+              "oracle_hints": [
+                "plot",
+                "plotted"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
             },
             {
-                "subtype": "Forced Sacrifice",
-                "keywords": [],
-                "card_text_regex": ["/each (?:player|opponent) sacrifices/i", "/sacrifice (?:a|\\d+) (?:creature|permanent)/i", "/target player sacrifices/i"],
-                "examples": ["Liliana of the Veil", "Grave Pact", "Dictate of Erebos", "Fleshbag Marauder", "Plaguecrafter", "Sheoldred, Whispering One", "Tergrid, God of Fright", "Killing Wave", "Smallpox", "Torment of Hailfire"]
+              "key": "card_advantage.cheat.suspend",
+              "name": "Suspend",
+              "aliases": [
+                "suspend",
+                "time sneak"
+              ],
+              "description": "Exile with time counters; when the last is removed, cast it without paying its mana cost.",
+              "oracle_hints": [
+                "suspend",
+                "if you cast it using suspend"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
             },
             {
-                "subtype": "Discard Effects",
-                "keywords": [],
-                "card_text_regex": ["/target player discards/i", "/each player discards/i", "/discards? (?:their|your) hand/i"],
-                "examples": ["Thoughtseize", "Hymn to Tourach", "Duress", "Mind Twist", "Kroxa, Titan of Death's Hunger", "Tergrid's Lantern", "Burglar Rat", "Necrogen Mists", "Waste Not", "Painful Quandary"]
-            },
-            {
-                "subtype": "Graveyard Hate",
-                "keywords": [],
-                "card_text_regex": ["/exile (?:all|target) cards? from (?:a|your) graveyard/i", "/cards? can't enter graveyards/i", "/shuffle (?:a|target) graveyard/i"],
-                "examples": ["Rest in Peace", "Leyline of the Void", "Soul-Guide Lantern", "Scavenging Ooze", "Dauthi Voidwalker", "Bojuka Bog", "Tormod's Crypt", "Relic of Progenitus", "Nihil Spellbomb", "Planar Void"]
-            },
-            {
-                "subtype": "Combat Disruption",
-                "keywords": ["Goad"],
-                "card_text_regex": ["/creatures must attack/i"],
-                "examples": ["Disrupt Decorum", "Kardur, Doomscourge", "Geode Rager"]
-            },
-            {
-                "subtype": "Stax",
-                "keywords": [],
-                "card_text_regex": ["/players? can't untap (?:more than \\d+ )?lands?/i", "/spells? cost \\{[^}]+\\} more to cast/i", "/creatures? enter(?:s)? the battlefield tapped/i"],
-                "examples": ["Winter Orb", "Static Orb", "Hokori, Dust Drinker", "Smokestack", "Trinisphere", "Thalia, Guardian of Thraben", "Archon of Emeria", "Rule of Law", "Eidolon of Rhetoric", "Damping Sphere"]
-            },
-            {
-                "subtype": "Taxing",
-                "keywords": [],
-                "card_text_regex": ["/pay \\{[^}]+\\} or sacrifice/i", "/attacking costs? \\{[^}]+\\} more/i", "/activated abilities? cost \\{[^}]+\\} more/i"],
-                "examples": ["Propaganda", "Ghostly Prison", "Sphere of Safety", "Norn's Annex", "Collector Ouphe", "Aura of Silence", "Vryn Wingmare", "Glowrider", "Vandalblast", "Karn, the Great Creator"]
-            }   
-        ]   
-    },
-    "protection": {
-        "subtypes": [
-            {
-                "subtype": "Hexproof/Shroud",
-                "keywords": ["Hexproof", "Shroud"],
-                "card_text_regex": ["/hexproof/i", "/can't be targeted/i"],
-                "examples": ["Lightning Greaves", "Shalai, Voice of Plenty", "Saryth, the Viper's Fang", "Archetype of Endurance", "Leyline of Sanctity", "Tamiyo, Collector of Tales", "Orbs of Warding", "Alpha Authority"]
-            },
-            {
-                "subtype": "Indestructibility",
-                "keywords": ["Indestructible"],
-                "card_text_regex": ["/indestructible/i"],
-                "examples": ["Heroic Intervention", "Avacyn, Angel of Hope", "Darksteel Plate", "Eldrazi Monument", "Unbreakable Formation", "Flawless Maneuver", "Boros Charm", "Teferi's Protection", "Guardian of Faith", "Withstand Death"]
-            },
-            {
-                "subtype": "Prevent Damage/Fog",
-                "keywords": [],
-                "card_text_regex": ["/prevent all combat damage/i"],
-                "examples": ["Fog", "Arachnogenesis", "Inkshield", "Deflecting Swat", "Deflecting Palm", "Comeuppance", "Batwing Brume", "Dawn Charm", "Obscuring Haze", "Tangle"]
-            },
-            {
-              "subtype": "Evasion & Deterrence",
-              "keywords": ["Protection", "Deter"],
-              "card_text_regex": ["/creatures? can't attack (?:you|each other)/i"],
-              "examples": ["Propaganda", "Silent Arbiter", "Crawlspace", "No Mercy", "Koskun Falls", "Windborn Muse", "Norn's Annex", "Michiko Konda, Truth Seeker", "Island Sanctuary", "Kazuul, Tyrant of the Cliffs"]
+              "key": "card_advantage.cheat.storm",
+              "name": "Storm",
+              "aliases": [
+                "storm",
+                "storm count"
+              ],
+              "description": "Copy the spell for each other spell cast this turn.",
+              "oracle_hints": [
+                "storm",
+                "copy it for each spell"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
             }
-        ]
+          ]
+        },
+        {
+          "key": "card_advantage.filtering",
+          "name": "Card Filtering",
+          "aliases": [
+            "filtering",
+            "card selection",
+            "card quality"
+          ],
+          "description": "Improving card quality without strict card advantage \u2014 loot, rummage, scry, surveil.",
+          "oracle_hints": [],
+          "keywords": [
+            "Scry",
+            "Surveil"
+          ],
+          "card_text_regex": [
+            "scry \\d+",
+            "surveil \\d+"
+          ],
+          "examples": [
+            "Brainstorm",
+            "Ponder",
+            "Sensei's Divining Top",
+            "Sylvan Library",
+            "Oracle of Mul Daya",
+            "Courser of Kruphix",
+            "The Reality Chip",
+            "Soothsaying",
+            "Mirri's Guile",
+            "Future Sight"
+          ],
+          "children": [
+            {
+              "key": "card_advantage.filtering.loot",
+              "name": "Loot",
+              "aliases": [
+                "loot",
+                "looting"
+              ],
+              "description": "Draw a card, then discard a card.",
+              "oracle_hints": [
+                "draw a card, then discard",
+                "draw then discard"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            },
+            {
+              "key": "card_advantage.filtering.rummage",
+              "name": "Rummage",
+              "aliases": [
+                "rummage",
+                "rummaging"
+              ],
+              "description": "Discard a card, then draw a card.",
+              "oracle_hints": [
+                "discard a card, then draw",
+                "discard then draw"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            },
+            {
+              "key": "card_advantage.filtering.scry",
+              "name": "Scry",
+              "aliases": [
+                "scry",
+                "scrying"
+              ],
+              "description": "Look at the top N cards of your library, put any on bottom in any order.",
+              "oracle_hints": [
+                "scry"
+              ],
+              "keywords": [
+                "Scry"
+              ],
+              "card_text_regex": [
+                "scry \\d+"
+              ],
+              "examples": [],
+              "children": []
+            },
+            {
+              "key": "card_advantage.filtering.surveil",
+              "name": "Surveil",
+              "aliases": [
+                "surveil",
+                "surveilling"
+              ],
+              "description": "Look at the top N cards, put any into your graveyard and the rest back on top.",
+              "oracle_hints": [
+                "surveil"
+              ],
+              "keywords": [
+                "Surveil"
+              ],
+              "card_text_regex": [
+                "surveil \\d+"
+              ],
+              "examples": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "key": "card_advantage.recursion",
+          "name": "Recursion",
+          "aliases": [
+            "recursion",
+            "graveyard recursion",
+            "reanimation",
+            "regrowth"
+          ],
+          "description": "Return cards from the graveyard to hand, battlefield, or top of library.",
+          "oracle_hints": [
+            "return",
+            "from your graveyard"
+          ],
+          "keywords": [
+            "Flashback",
+            "Unearth",
+            "Escape"
+          ],
+          "card_text_regex": [
+            "return (?:target|a) (?:creature|card) from your graveyard"
+          ],
+          "examples": [
+            "Eternal Witness",
+            "Sun Titan",
+            "Reanimate",
+            "Meren of Clan Nel Toth",
+            "Phyrexian Reclamation",
+            "Past in Flames",
+            "Sevinne's Reclamation",
+            "Chainer, Dementia Master",
+            "Dread Return",
+            "Timeless Witness"
+          ],
+          "children": [
+            {
+              "key": "card_advantage.recursion.reanimate",
+              "name": "Reanimation",
+              "aliases": [
+                "reanimate",
+                "reanimation",
+                "reanimate spell",
+                "rise from the dead"
+              ],
+              "description": "Return a creature from graveyard to battlefield.",
+              "oracle_hints": [
+                "return",
+                "creature",
+                "from your graveyard to the battlefield"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            },
+            {
+              "key": "card_advantage.recursion.regrowth",
+              "name": "Regrowth",
+              "aliases": [
+                "regrowth",
+                "raise dead",
+                "return to hand"
+              ],
+              "description": "Return a card from graveyard to hand.",
+              "oracle_hints": [
+                "return",
+                "from your graveyard to your hand"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "interaction",
+      "name": "Disruption / Interaction",
+      "aliases": [
+        "interaction",
+        "disruption",
+        "answers",
+        "removal",
+        "response"
+      ],
+      "description": "Answering your opponent's threats. Includes targeted removal, burn, mass removal (board wipes), counters, bounce, ability denial, discard, stax, and tax. Mill-as-hate and graveyard hate live under graveyard.*; aristocrats/self-mill are advantage.",
+      "oracle_hints": [],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": [
+        {
+          "key": "interaction.targeted_removal",
+          "name": "Targeted Removal",
+          "aliases": [
+            "removal",
+            "spot removal",
+            "single-target removal"
+          ],
+          "description": "Destroy, exile, or otherwise remove a single permanent.",
+          "oracle_hints": [
+            "destroy target",
+            "exile target",
+            "deals damage to target"
+          ],
+          "keywords": [
+            "Deathtouch"
+          ],
+          "card_text_regex": [
+            "destroy target (?:creature|permanent)",
+            "exile target (?:creature|permanent)",
+            "deals? \\d+ damage to target",
+            "sacrifice(?: a| that) (?:creature|permanent)"
+          ],
+          "examples": [
+            "Swords to Plowshares",
+            "Assassin's Trophy",
+            "Dismember"
+          ],
+          "children": [
+            {
+              "key": "interaction.targeted_removal.destroy",
+              "name": "Destroy",
+              "aliases": [
+                "destroy",
+                "kill spell",
+                "murder"
+              ],
+              "description": "Destroy target creature or permanent.",
+              "oracle_hints": [
+                "destroy target creature",
+                "destroy target permanent"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            },
+            {
+              "key": "interaction.targeted_removal.exile",
+              "name": "Exile-Based Removal",
+              "aliases": [
+                "exile removal",
+                "path",
+                "swords"
+              ],
+              "description": "Exile target creature or permanent.",
+              "oracle_hints": [
+                "exile target creature",
+                "exile target permanent"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            },
+            {
+              "key": "interaction.targeted_removal.damage",
+              "name": "Damage-Based Removal",
+              "aliases": [
+                "damage-based removal",
+                "ping creature"
+              ],
+              "description": "Deal damage to a creature to kill it. The burn methodology (face or any-target) lives at interaction.burn.",
+              "oracle_hints": [
+                "deals damage to target creature",
+                "damage to target creature"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            },
+            {
+              "key": "interaction.targeted_removal.shrink",
+              "name": "Shrink",
+              "aliases": [
+                "shrink",
+                "debuff",
+                "minus counters"
+              ],
+              "description": "Give a creature -N/-N to weaken or kill it.",
+              "oracle_hints": [
+                "gets -",
+                "-1/-1"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            },
+            {
+              "key": "interaction.targeted_removal.edict",
+              "name": "Edict",
+              "aliases": [
+                "edict",
+                "forced sacrifice",
+                "sac effect"
+              ],
+              "description": "Force an opponent to sacrifice a creature (bypasses hexproof/indestructible).",
+              "oracle_hints": [
+                "opponent sacrifices",
+                "player sacrifices"
+              ],
+              "keywords": [],
+              "card_text_regex": [
+                "each (?:player|opponent) sacrifices",
+                "sacrifice (?:a|\\d+) (?:creature|permanent)",
+                "target player sacrifices"
+              ],
+              "examples": [
+                "Liliana of the Veil",
+                "Grave Pact",
+                "Dictate of Erebos",
+                "Fleshbag Marauder",
+                "Plaguecrafter",
+                "Sheoldred, Whispering One",
+                "Tergrid, God of Fright",
+                "Killing Wave",
+                "Smallpox",
+                "Torment of Hailfire"
+              ],
+              "children": []
+            },
+            {
+              "key": "interaction.targeted_removal.tuck",
+              "name": "Tuck",
+              "aliases": [
+                "tuck",
+                "put on bottom"
+              ],
+              "description": "Put a permanent on the bottom of its owner's library.",
+              "oracle_hints": [
+                "on the bottom of",
+                "into its owner's library"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "key": "interaction.burn",
+          "name": "Burn / Direct Damage",
+          "aliases": [
+            "burn",
+            "bolt",
+            "direct damage",
+            "lightning",
+            "ping",
+            "burn spell",
+            "burn deck",
+            "face damage"
+          ],
+          "description": "Deal damage as the method \u2014 to creatures (removal) or to players (the burn win condition). Distinct from destroy/exile removal.",
+          "oracle_hints": [
+            "deals damage to",
+            "damage to any target",
+            "deals 3 damage"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": [
+            {
+              "key": "interaction.burn.creature",
+              "name": "Creature Burn",
+              "aliases": [
+                "shock",
+                "bolt a creature"
+              ],
+              "description": "Damage aimed at creatures as removal.",
+              "oracle_hints": [
+                "deals damage to target creature",
+                "damage to any target"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            },
+            {
+              "key": "interaction.burn.player",
+              "name": "Face Burn",
+              "aliases": [
+                "burn face",
+                "burn the opponent",
+                "lightning axe",
+                "go to the face"
+              ],
+              "description": "Damage aimed at players as a win condition.",
+              "oracle_hints": [
+                "deals damage to target player",
+                "deals damage to each opponent",
+                "that player loses life"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "key": "interaction.mass_removal",
+          "name": "Mass Removal",
+          "aliases": [
+            "board wipe",
+            "boardwipe",
+            "wrath",
+            "sweeper",
+            "mass removal",
+            "wipe the board",
+            "nuke"
+          ],
+          "description": "Remove all or most creatures/permanents from the battlefield. Named after Wrath of God.",
+          "oracle_hints": [
+            "destroy all creatures",
+            "destroy all permanents",
+            "exile all creatures",
+            "all creatures get -",
+            "damage to each creature",
+            "each player sacrifices"
+          ],
+          "keywords": [
+            "Cleave"
+          ],
+          "card_text_regex": [
+            "destroy all (?:creatures|permanents)",
+            "exile all (?:creatures|permanents)",
+            "each player sacrifices (?:all|\\d+)",
+            "damage to each (?:creature|player)"
+          ],
+          "examples": [
+            "Wrath of God",
+            "Damnation",
+            "Toxic Deluge",
+            "Blasphemous Act",
+            "Farewell",
+            "Cyclonic Rift",
+            "Austere Command",
+            "Nevinyrral's Disk",
+            "Urza's Ruinous Blast",
+            "Decree of Annihilation"
+          ],
+          "children": []
+        },
+        {
+          "key": "interaction.counterspell",
+          "name": "Counterspell",
+          "aliases": [
+            "counter",
+            "counterspell",
+            "negate",
+            "cancel",
+            "permission",
+            "counter magic"
+          ],
+          "description": "Counter a spell on the stack, preventing it from resolving.",
+          "oracle_hints": [
+            "counter target spell"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "counter target (?:spell|ability)",
+            "unless (?:its|their) controller pays",
+            "no one may cast spells"
+          ],
+          "examples": [
+            "Counterspell",
+            "Force of Will",
+            "Mana Drain",
+            "Dovin's Veto",
+            "Flusterstorm",
+            "Swan Song",
+            "Fierce Guardianship",
+            "Mystic Confluence",
+            "An Offer You Can't Refuse",
+            "Drown in the Loch"
+          ],
+          "children": [
+            {
+              "key": "interaction.counterspell.hard",
+              "name": "Hard Counter",
+              "aliases": [
+                "hard counter"
+              ],
+              "description": "Unconditionally counter a spell.",
+              "oracle_hints": [
+                "counter target spell"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            },
+            {
+              "key": "interaction.counterspell.soft",
+              "name": "Soft Counter",
+              "aliases": [
+                "soft counter",
+                "tax counter",
+                "mana leak"
+              ],
+              "description": "Counter unless the opponent pays additional mana.",
+              "oracle_hints": [
+                "counter target spell unless",
+                "unless its controller pays"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "key": "interaction.protection",
+          "name": "Protection",
+          "aliases": [
+            "protection",
+            "hexproof",
+            "shroud",
+            "ward",
+            "indestructible",
+            "phase out"
+          ],
+          "description": "Protect your permanents from opponent interaction \u2014 hexproof, ward, indestructible, protection from, phasing.",
+          "oracle_hints": [
+            "hexproof",
+            "ward",
+            "indestructible",
+            "protection from",
+            "phases out",
+            "can't be the target"
+          ],
+          "keywords": [
+            "Hexproof",
+            "Shroud",
+            "Indestructible"
+          ],
+          "card_text_regex": [
+            "hexproof",
+            "can't be targeted",
+            "indestructible"
+          ],
+          "examples": [
+            "Lightning Greaves",
+            "Shalai, Voice of Plenty",
+            "Saryth, the Viper's Fang",
+            "Archetype of Endurance",
+            "Leyline of Sanctity",
+            "Tamiyo, Collector of Tales",
+            "Orbs of Warding",
+            "Alpha Authority",
+            "Heroic Intervention",
+            "Avacyn, Angel of Hope",
+            "Darksteel Plate",
+            "Eldrazi Monument",
+            "Unbreakable Formation",
+            "Flawless Maneuver",
+            "Boros Charm",
+            "Teferi's Protection",
+            "Guardian of Faith",
+            "Withstand Death"
+          ],
+          "children": []
+        },
+        {
+          "key": "interaction.bounce",
+          "name": "Bounce",
+          "aliases": [
+            "bounce",
+            "unsummon",
+            "return to hand",
+            "bounce spell"
+          ],
+          "description": "Return a permanent to its owner's hand. Tempo, not permanent removal \u2014 the card can be replayed.",
+          "oracle_hints": [
+            "return target",
+            "to its owner's hand",
+            "to their owner's hand"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "interaction.ability_denial",
+          "name": "Ability Denial",
+          "aliases": [
+            "lose abilities",
+            "loses all abilities",
+            "ability stripping",
+            "pacifism",
+            "frog",
+            "turn to frog",
+            "humility",
+            "can't attack",
+            "can't block",
+            "can't activate"
+          ],
+          "description": "Strip or shut off abilities without killing the permanent \u2014 Pacifism, Turn to Frog, Humility, 'loses all abilities'.",
+          "oracle_hints": [
+            "loses all abilities",
+            "lose all abilities",
+            "can't attack",
+            "can't block",
+            "can't attack or block",
+            "activated abilities can't be activated"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "interaction.discard",
+          "name": "Hand Disruption",
+          "aliases": [
+            "discard",
+            "hand hate",
+            "thoughtseize",
+            "mind twist",
+            "discard outlet",
+            "make them discard"
+          ],
+          "description": "Force opponents to discard, or otherwise attack the hand.",
+          "oracle_hints": [
+            "discards a card",
+            "discards two cards",
+            "discard a card",
+            "target player discards",
+            "each opponent discards"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "target player discards",
+            "each player discards",
+            "discards? (?:their|your) hand"
+          ],
+          "examples": [
+            "Thoughtseize",
+            "Hymn to Tourach",
+            "Duress",
+            "Mind Twist",
+            "Kroxa, Titan of Death's Hunger",
+            "Tergrid's Lantern",
+            "Burglar Rat",
+            "Necrogen Mists",
+            "Waste Not",
+            "Painful Quandary"
+          ],
+          "children": []
+        },
+        {
+          "key": "interaction.stax",
+          "name": "Stax",
+          "aliases": [
+            "stax",
+            "hate bear",
+            "hatebear",
+            "denial",
+            "lock",
+            "prison",
+            "winter orb",
+            "static orb",
+            "smokestack",
+            "rule of law"
+          ],
+          "description": "Restrict what opponents can do \u2014 prevent untapping, prohibit casting or activating, lock pieces. Distinct from tax, which raises costs instead of forbidding the action.",
+          "oracle_hints": [
+            "can't untap",
+            "doesn't untap",
+            "can't cast",
+            "can't activate",
+            "players can't",
+            "spells can't be cast"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "players? can't untap (?:more than \\d+ )?lands?",
+            "spells? cost \\{[^}]+\\} more to cast",
+            "creatures? enter(?:s)? the battlefield tapped"
+          ],
+          "examples": [
+            "Winter Orb",
+            "Static Orb",
+            "Hokori, Dust Drinker",
+            "Smokestack",
+            "Trinisphere",
+            "Thalia, Guardian of Thraben",
+            "Archon of Emeria",
+            "Rule of Law",
+            "Eidolon of Rhetoric",
+            "Damping Sphere"
+          ],
+          "children": []
+        },
+        {
+          "key": "interaction.tax",
+          "name": "Tax",
+          "aliases": [
+            "tax",
+            "taxation",
+            "rhystic",
+            "sphere of resistance",
+            "thorn of amethyst",
+            "ghostly prison",
+            "propaganda"
+          ],
+          "description": "Make opponents pay extra to cast, attack, or activate \u2014 Rhystic Study, Sphere of Resistance, Ghostly Prison. The action is still legal; it just costs more.",
+          "oracle_hints": [
+            "costs more",
+            "cost more to cast",
+            "spells cost",
+            "unless you pay",
+            "unless its controller pays",
+            "creatures can't attack you unless"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "pay \\{[^}]+\\} or sacrifice",
+            "attacking costs? \\{[^}]+\\} more",
+            "activated abilities? cost \\{[^}]+\\} more"
+          ],
+          "examples": [
+            "Propaganda",
+            "Ghostly Prison",
+            "Sphere of Safety",
+            "Norn's Annex",
+            "Collector Ouphe",
+            "Aura of Silence",
+            "Vryn Wingmare",
+            "Glowrider",
+            "Vandalblast",
+            "Karn, the Great Creator"
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "key": "theft",
+      "name": "Theft",
+      "aliases": [
+        "theft",
+        "steal",
+        "steal creature",
+        "mind control",
+        "threaten",
+        "gain control",
+        "act of treason",
+        "control magic"
+      ],
+      "description": "Take opponent's cards \u2014 permanent control, until-end-of-turn threaten effects, or casting from their zones.",
+      "oracle_hints": [
+        "gain control of",
+        "gains control of"
+      ],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": [
+        {
+          "key": "theft.permanent",
+          "name": "Permanent Control",
+          "aliases": [
+            "mind control",
+            "control magic",
+            "permanent theft",
+            "steal permanently"
+          ],
+          "description": "Gain control of a permanent with no end-of-turn clause.",
+          "oracle_hints": [
+            "gain control of target",
+            "you gain control of"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "theft.threaten",
+          "name": "Threaten",
+          "aliases": [
+            "threaten",
+            "act of treason",
+            "grab the reins",
+            "steal for a turn"
+          ],
+          "description": "Gain control until end of turn, usually with haste, then give it back (often after sacrificing it).",
+          "oracle_hints": [
+            "gain control of target creature until end of turn",
+            "untap that creature",
+            "gains haste until end of turn"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "theft.cast",
+          "name": "Cast from Opponent",
+          "aliases": [
+            "cast from opponent",
+            "steal spells",
+            "gonti",
+            "bribery",
+            "cast their cards"
+          ],
+          "description": "Play or cast cards from an opponent's hand, library, graveyard, or exile.",
+          "oracle_hints": [
+            "cast from",
+            "play from",
+            "may cast",
+            "that player's",
+            "owner's hand",
+            "from exile"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "key": "control",
+      "name": "Control",
+      "aliases": [
+        "control deck",
+        "permission control",
+        "draw-go"
+      ],
+      "description": "The control archetype: answer threats, win the long game. Permission (counters), board control, tap-down, extra turns, and pillowfort. The bare word 'control' is not an alias \u2014 it collides with theft ('gain control of').",
+      "oracle_hints": [],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": [
+        {
+          "key": "control.permission",
+          "name": "Permission",
+          "aliases": [
+            "permission",
+            "draw-go"
+          ],
+          "description": "Hold up mana to counter spells. Same oracle family as interaction.counterspell; kept here so the control branch expands.",
+          "oracle_hints": [
+            "counter target spell"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "control.tap_down",
+          "name": "Tap-Down",
+          "aliases": [
+            "tap down",
+            "tap out",
+            "frost titan",
+            "sleep",
+            "keep tapped"
+          ],
+          "description": "Tap opposing permanents and often keep them from untapping.",
+          "oracle_hints": [
+            "tap target",
+            "tap all",
+            "doesn't untap during",
+            "remain tapped"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "control.pillowfort",
+          "name": "Pillowfort",
+          "aliases": [
+            "pillowfort",
+            "can't attack you",
+            "sphere of safety"
+          ],
+          "description": "Make attacking you expensive or illegal. Ghostly Prison and Propaganda also live under interaction.tax.",
+          "oracle_hints": [
+            "can't attack you",
+            "creatures can't attack you unless",
+            "prevent all combat damage",
+            "can't be attacked"
+          ],
+          "keywords": [
+            "Protection",
+            "Deter"
+          ],
+          "card_text_regex": [
+            "creatures? can't attack (?:you|each other)"
+          ],
+          "examples": [
+            "Propaganda",
+            "Silent Arbiter",
+            "Crawlspace",
+            "No Mercy",
+            "Koskun Falls",
+            "Windborn Muse",
+            "Norn's Annex",
+            "Michiko Konda, Truth Seeker",
+            "Island Sanctuary",
+            "Kazuul, Tyrant of the Cliffs"
+          ],
+          "children": []
+        },
+        {
+          "key": "control.extra_turn",
+          "name": "Extra Turns",
+          "aliases": [
+            "extra turn",
+            "extra turns",
+            "time walk",
+            "take another turn"
+          ],
+          "description": "Take an additional turn after this one.",
+          "oracle_hints": [
+            "take an extra turn",
+            "takes an extra turn",
+            "additional turn"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "key": "buff",
+      "name": "Buff / Enhance",
+      "aliases": [
+        "buff",
+        "enhance",
+        "pump",
+        "boost",
+        "power up"
+      ],
+      "description": "Making your creatures stronger \u2014 through anthems, counters, temporary pump spells, keyword granting, or equipment/auras.",
+      "oracle_hints": [],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": [
+        {
+          "key": "buff.anthem",
+          "name": "Anthem",
+          "aliases": [
+            "anthem",
+            "lord",
+            "mass buff",
+            "team buff",
+            "static buff"
+          ],
+          "description": "Permanent effect that buffs all your creatures. 'Lord' refers to type-specific buffs (all Elves get +1/+1).",
+          "oracle_hints": [
+            "creatures you control get +",
+            "other creatures you control get +"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "buff.counters",
+          "name": "Counters",
+          "aliases": [
+            "+1/+1 counters",
+            "counters",
+            "counter synergy",
+            "counter build-up",
+            "grow"
+          ],
+          "description": "Permanent buffs via +1/+1 counters or keyword counters (flying counter, trample counter, etc.).",
+          "oracle_hints": [
+            "+1/+1 counter",
+            "flying counter",
+            "trample counter",
+            "put a counter"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "buff.pump",
+          "name": "Pump",
+          "aliases": [
+            "pump",
+            "pump spell",
+            "combat trick",
+            "giant growth"
+          ],
+          "description": "Temporary power/toughness boost, usually until end of turn. Combat tricks are pump spells cast during combat.",
+          "oracle_hints": [
+            "gets +",
+            "until end of turn",
+            "target creature gets +"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "buff.keywords",
+          "name": "Keyword Granting",
+          "aliases": [
+            "grant haste",
+            "give flying",
+            "give trample",
+            "keyword soup",
+            "keyword buff"
+          ],
+          "description": "Give creatures keyword abilities \u2014 haste, flying, trample, lifelink, deathtouch, indestructible, double strike, etc.",
+          "oracle_hints": [
+            "gains haste",
+            "gains flying",
+            "gains trample",
+            "gains lifelink",
+            "gains deathtouch",
+            "gains indestructible",
+            "gains double strike",
+            "has flying",
+            "has haste"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "buff.equipment_aura",
+          "name": "Equipment & Auras",
+          "aliases": [
+            "equipment",
+            "aura",
+            "voltron",
+            "suit up",
+            "enchant creature",
+            "equip"
+          ],
+          "description": "Persistent buffs through Equipment (re-attachable artifacts) or Auras (enchantments attached to creatures). Voltron is the strategy of loading one creature with many.",
+          "oracle_hints": [
+            "equip",
+            "equipped creature",
+            "enchanted creature",
+            "enchant creature"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "key": "ramp",
+      "name": "Mana Acceleration",
+      "aliases": [
+        "ramp",
+        "mana ramp",
+        "acceleration",
+        "mana base",
+        "fast mana"
+      ],
+      "description": "Getting ahead on mana \u2014 through land tutors, mana creatures, mana rocks, Treasure tokens, cost reduction, doublers, and extra land drops.",
+      "oracle_hints": [],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": [
+        {
+          "key": "ramp.land_tutor",
+          "name": "Land Tutor",
+          "aliases": [
+            "land ramp",
+            "rampant growth",
+            "cultivate",
+            "fetch land"
+          ],
+          "description": "Search your library for a land and put it onto the battlefield (true ramp) or into your hand.",
+          "oracle_hints": [
+            "search your library for a land",
+            "search your library for a basic land",
+            "put it onto the battlefield tapped"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "search (?:your|their) library for (?:a|\\d+) land"
+          ],
+          "examples": [
+            "Cultivate",
+            "Kodama's Reach",
+            "Exploration",
+            "Azusa, Lost but Seeking",
+            "Sakura-Tribe Elder",
+            "Harrow",
+            "Solemn Simulacrum",
+            "Tatyova, Benthic Druid",
+            "Crucible of Worlds",
+            "Scapeshift"
+          ],
+          "children": []
+        },
+        {
+          "key": "ramp.mana_dork",
+          "name": "Mana Dork",
+          "aliases": [
+            "mana dork",
+            "mana creature",
+            "mana elf",
+            "birds"
+          ],
+          "description": "A creature that taps to produce mana. Usually fragile but provides early acceleration.",
+          "oracle_hints": [
+            "add {",
+            "add one mana"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "\\{T\\}: Add \\{[^}]+\\}"
+          ],
+          "examples": [
+            "Llanowar Elves",
+            "Birds of Paradise",
+            "Bloom Tender",
+            "Priest of Titania",
+            "Faeburrow Elder",
+            "Marwyn, the Nurturer",
+            "Selvala, Heart of the Wilds",
+            "Joraga Treespeaker",
+            "Ignoble Hierarch",
+            "Lotus Cobra"
+          ],
+          "children": []
+        },
+        {
+          "key": "ramp.mana_rock",
+          "name": "Mana Rock",
+          "aliases": [
+            "mana rock",
+            "rock",
+            "signet",
+            "talisman",
+            "sol ring"
+          ],
+          "description": "An artifact that taps to produce mana.",
+          "oracle_hints": [
+            "tap: add",
+            "add one mana of any color"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "\\{T\\}: Add \\{[^}]+\\}"
+          ],
+          "examples": [
+            "Sol Ring",
+            "Arcane Signet",
+            "Mana Crypt",
+            "Chromatic Lantern",
+            "Gilded Lotus",
+            "Thran Dynamo",
+            "Fellwar Stone",
+            "Commander's Sphere",
+            "Hedron Archive",
+            "Midnight Clock"
+          ],
+          "children": []
+        },
+        {
+          "key": "ramp.treasure",
+          "name": "Treasure Tokens",
+          "aliases": [
+            "treasure",
+            "treasure token",
+            "treasure maker"
+          ],
+          "description": "Create Treasure tokens \u2014 artifact tokens you sacrifice to add one mana of any color.",
+          "oracle_hints": [
+            "create a Treasure token",
+            "create Treasure tokens"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "create (?:a|\\d+) Treasure tokens?"
+          ],
+          "examples": [
+            "Dockside Extortionist",
+            "Smothering Tithe",
+            "Ragavan, Nimble Pilferer",
+            "Prosperous Partnership",
+            "Bootleggers' Stash",
+            "Deadly Dispute",
+            "Pitiless Plunderer",
+            "Xorn",
+            "Gala Greeters",
+            "Unexpected Windfall"
+          ],
+          "children": []
+        },
+        {
+          "key": "ramp.cost_reduction",
+          "name": "Cost Reduction",
+          "aliases": [
+            "cost reduction",
+            "cost reducer",
+            "affinity",
+            "convoke",
+            "delve",
+            "improvise"
+          ],
+          "description": "Make spells cheaper to cast \u2014 flat cost reduction, Affinity, Convoke (tap creatures), Delve (exile graveyard), Improvise (tap artifacts).",
+          "oracle_hints": [
+            "costs less",
+            "cost less to cast",
+            "affinity",
+            "convoke",
+            "delve",
+            "improvise"
+          ],
+          "keywords": [
+            "Affinity",
+            "Convoke"
+          ],
+          "card_text_regex": [
+            "costs? \\d+ less to cast"
+          ],
+          "examples": [
+            "Goblin Electromancer",
+            "Urza's Incubator",
+            "Heartless Summoning",
+            "Baral, Chief of Compliance",
+            "Semblance Anvil",
+            "Hazoret's Monument",
+            "The Immortal Sun",
+            "Cloud Key",
+            "Oketra's Monument",
+            "Jet Medallion"
+          ],
+          "children": []
+        },
+        {
+          "key": "ramp.doubler",
+          "name": "Mana Doubler",
+          "aliases": [
+            "mana doubler",
+            "mana multiplier",
+            "double mana"
+          ],
+          "description": "Effects that double or multiply mana production \u2014 'whenever a land is tapped for mana, add one additional'.",
+          "oracle_hints": [
+            "add one additional",
+            "add that much mana",
+            "double the mana",
+            "produce additional mana"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "double (?:the|your) (?:mana|tokens)",
+            "add (?:an additional|\\d+) mana",
+            "whenever you tap a land for mana"
+          ],
+          "examples": [
+            "Nyxbloom Ancient",
+            "Mana Reflection",
+            "Zendikar Resurgent",
+            "Vorinclex, Voice of Hunger",
+            "Kinnan, Bonder Prodigy",
+            "Nissa, Who Shakes the World",
+            "Caged Sun",
+            "Extraplanar Lens",
+            "Gauntlet of Power",
+            "Regal Behemoth"
+          ],
+          "children": []
+        },
+        {
+          "key": "ramp.extra_land",
+          "name": "Extra Land Drops",
+          "aliases": [
+            "extra land",
+            "additional land",
+            "explore",
+            "land per turn",
+            "extra land drop"
+          ],
+          "description": "Play additional lands per turn beyond the normal one.",
+          "oracle_hints": [
+            "play an additional land",
+            "play two additional lands"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "ramp.fast_mana",
+          "name": "Fast Mana",
+          "aliases": [
+            "fast mana",
+            "mana burst"
+          ],
+          "description": "Burst mana that is not a land drop you keep \u2014 zero- and low-cost rocks, rituals, and similar accelerants.",
+          "oracle_hints": [
+            "add",
+            "mana"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "add \\d+ mana"
+          ],
+          "examples": [
+            "Dark Ritual",
+            "Sol Ring",
+            "Mana Crypt",
+            "Jeweled Lotus",
+            "Mana Vault",
+            "Grim Monolith",
+            "Lion's Eye Diamond",
+            "Mox Opal",
+            "Mox Diamond",
+            "Ancient Tomb",
+            "Cabal Ritual"
+          ],
+          "children": []
+        },
+        {
+          "key": "ramp.ritual",
+          "name": "Rituals",
+          "aliases": [
+            "ritual",
+            "rituals",
+            "seething song"
+          ],
+          "description": "A spell that adds a burst of mana, often cheaper than the mana produced or paid by sacrificing.",
+          "oracle_hints": [
+            "add one mana of any color",
+            "add",
+            "sacrifice a creature"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "add \\{[^}]+\\} for each (?:creature|permanent)",
+            "add \\d+ mana of any one color",
+            "sacrifice (?:a|X) (?:creature|permanent)"
+          ],
+          "examples": [
+            "Dark Ritual",
+            "Seething Song",
+            "Pyretic Ritual",
+            "Desperate Ritual",
+            "Cabal Ritual",
+            "Battle Hymn",
+            "Songs of the Damned",
+            "Rain of Filth",
+            "Culling the Weak",
+            "Infernal Plunge"
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "key": "evasion",
+      "name": "Evasion",
+      "aliases": [
+        "evasion",
+        "unblockable",
+        "evasive",
+        "get through"
+      ],
+      "description": "Abilities that make creatures hard or impossible to block \u2014 flying, menace, trample, shadow, fear, skulk, horsemanship, or full unblockability.",
+      "oracle_hints": [
+        "flying",
+        "menace",
+        "trample",
+        "can't be blocked",
+        "shadow",
+        "fear",
+        "intimidate",
+        "skulk",
+        "horsemanship"
+      ],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": []
+    },
+    {
+      "key": "graveyard",
+      "name": "Graveyard Strategies",
+      "aliases": [
+        "graveyard",
+        "GY",
+        "yard",
+        "graveyard matters"
+      ],
+      "description": "The graveyard as a zone. Synergy (self-mill, dredge, flashback, reanimate) is advantage. Milling the opponent or exiling yards is interaction. Bare 'mill' expands both self and opponent.",
+      "oracle_hints": [],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": [
+        {
+          "key": "graveyard.cast_from",
+          "name": "Cast from Graveyard",
+          "aliases": [
+            "flashback",
+            "unearth",
+            "escape",
+            "disturb",
+            "embalm",
+            "eternalize",
+            "retrace",
+            "aftermath",
+            "graveyard synergy"
+          ],
+          "description": "Cast or activate your own cards from the graveyard \u2014 Flashback, Unearth, Escape, Disturb, Embalm, Eternalize. This is advantage, not hate.",
+          "oracle_hints": [
+            "flashback",
+            "unearth",
+            "escape",
+            "disturb",
+            "embalm",
+            "eternalize",
+            "cast this card from your graveyard"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "graveyard.mill",
+          "name": "Mill",
+          "aliases": [
+            "mill",
+            "milling"
+          ],
+          "description": "Put cards from a library into a graveyard. Self-mill fuels your yard (advantage). Milling the opponent is interaction or a win condition. Matching 'mill' expands both.",
+          "oracle_hints": [
+            "mill"
+          ],
+          "keywords": [
+            "Dredge",
+            "Madness",
+            "Surveil"
+          ],
+          "card_text_regex": [
+            "mill \\d+ cards?",
+            "discards? \\d+ cards?"
+          ],
+          "examples": [
+            "Faithless Looting",
+            "Mesmeric Orb",
+            "Glimpse the Unthinkable",
+            "Underworld Breach",
+            "Stitcher's Supplier",
+            "Hedron Crab",
+            "Tasha's Hideous Laughter",
+            "Burning Inquiry",
+            "Vohar, Vodalian Desecrator",
+            "Altar of Dementia"
+          ],
+          "children": [
+            {
+              "key": "graveyard.mill.self",
+              "name": "Self-Mill",
+              "aliases": [
+                "self-mill",
+                "self mill",
+                "mill myself",
+                "fill graveyard",
+                "dredge"
+              ],
+              "description": "Intentionally fill your own graveyard as a resource. Dredge, surveil-into-yard, 'put the top N of your library into your graveyard'.",
+              "oracle_hints": [
+                "mill yourself",
+                "put the top",
+                "cards from the top of your library into your graveyard",
+                "dredge"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            },
+            {
+              "key": "graveyard.mill.opponent",
+              "name": "Mill Opponent",
+              "aliases": [
+                "mill opponent",
+                "mill them",
+                "deck out",
+                "mill deck",
+                "mill win"
+              ],
+              "description": "Put cards from an opponent's library into their graveyard \u2014 interaction, or a mill-out win.",
+              "oracle_hints": [
+                "target player mills",
+                "target opponent mills",
+                "each opponent mills",
+                "cards from the top of their library"
+              ],
+              "keywords": [],
+              "card_text_regex": [],
+              "examples": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "key": "graveyard.hate",
+          "name": "Graveyard Hate",
+          "aliases": [
+            "graveyard hate",
+            "GY hate",
+            "grave hate",
+            "rest in peace",
+            "leyline of the void",
+            "relic of progenitus",
+            "tormod's crypt",
+            "soul-guide lantern",
+            "scavenger grounds"
+          ],
+          "description": "Exile cards from graveyards to shut down yard synergy. Interaction, not a mill deck.",
+          "oracle_hints": [
+            "exile all cards from",
+            "exile target card from a graveyard",
+            "exile all graveyards",
+            "if a card would be put into a graveyard"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "exile (?:all|target) cards? from (?:a|your) graveyard",
+            "cards? can't enter graveyards",
+            "shuffle (?:a|target) graveyard"
+          ],
+          "examples": [
+            "Rest in Peace",
+            "Leyline of the Void",
+            "Soul-Guide Lantern",
+            "Scavenging Ooze",
+            "Dauthi Voidwalker",
+            "Bojuka Bog",
+            "Tormod's Crypt",
+            "Relic of Progenitus",
+            "Nihil Spellbomb",
+            "Planar Void"
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "key": "tokens",
+      "name": "Token Generation",
+      "aliases": [
+        "tokens",
+        "token maker",
+        "token generator",
+        "go wide"
+      ],
+      "description": "Creating creature tokens, artifact tokens (Treasure, Food, Clue, Blood), or copy tokens.",
+      "oracle_hints": [
+        "create",
+        "token"
+      ],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": [
+        {
+          "key": "tokens.creature",
+          "name": "Creature Tokens",
+          "aliases": [
+            "creature tokens",
+            "token creatures",
+            "army in a can"
+          ],
+          "description": "Create creature tokens to build a board presence.",
+          "oracle_hints": [
+            "create a",
+            "creature token",
+            "creature tokens"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "tokens.artifact",
+          "name": "Artifact Tokens",
+          "aliases": [
+            "treasure tokens",
+            "food tokens",
+            "clue tokens",
+            "blood tokens",
+            "powerstone tokens"
+          ],
+          "description": "Create artifact tokens with built-in abilities \u2014 Treasure (mana), Food (life), Clue (draw), Blood (loot), Powerstone (colorless mana), Map (explore).",
+          "oracle_hints": [
+            "Treasure token",
+            "Food token",
+            "Clue token",
+            "Blood token",
+            "Powerstone token",
+            "Map token"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "tokens.copy",
+          "name": "Copy / Clone",
+          "aliases": [
+            "clone",
+            "copy",
+            "token copy",
+            "populate"
+          ],
+          "description": "Create token copies of existing creatures, spells, or permanents.",
+          "oracle_hints": [
+            "create a token that's a copy",
+            "create a copy",
+            "becomes a copy",
+            "copy target"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "key": "sacrifice",
+      "name": "Sacrifice / Aristocrats",
+      "aliases": [
+        "aristocrats",
+        "sacrifice",
+        "sac",
+        "sac outlet",
+        "death triggers",
+        "sacrifice synergy",
+        "sac fodder"
+      ],
+      "description": "Sacrifice as advantage: you choose to sac your permanents for value (outlets + dies payoffs). Forcing an opponent to sacrifice is interaction \u2014 see interaction.targeted_removal.edict.",
+      "oracle_hints": [
+        "sacrifice a creature",
+        "whenever a creature you control dies"
+      ],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": [
+        {
+          "key": "sacrifice.outlet",
+          "name": "Sacrifice Outlet",
+          "aliases": [
+            "sac outlet",
+            "sacrifice outlet",
+            "free sac"
+          ],
+          "description": "Abilities that let you sacrifice permanents at will.",
+          "oracle_hints": [
+            "sacrifice a creature",
+            "sacrifice a permanent",
+            "sacrifice an artifact"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "sacrifice.payoff",
+          "name": "Dies Payoff",
+          "aliases": [
+            "dies trigger",
+            "death trigger",
+            "blood artist",
+            "aristocrat payoff"
+          ],
+          "description": "Effects that trigger when your creatures die \u2014 drain, draw, tokens. The other half of aristocrats.",
+          "oracle_hints": [
+            "whenever a creature you control dies",
+            "whenever another creature dies",
+            "whenever a creature dies"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "sacrifice.fodder",
+          "name": "Sac Fodder",
+          "aliases": [
+            "sac fodder",
+            "sacrifice fodder",
+            "tokens to sacrifice",
+            "expendable creatures"
+          ],
+          "description": "Cheap or token creatures meant to be sacrificed, not to win combat.",
+          "oracle_hints": [
+            "create a",
+            "creature token",
+            "sacrifice it"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "key": "blink",
+      "name": "Flicker / Blink",
+      "aliases": [
+        "blink",
+        "flicker",
+        "exile and return",
+        "ETB abuse"
+      ],
+      "description": "Exile a permanent then return it to the battlefield to retrigger enters-the-battlefield abilities.",
+      "oracle_hints": [
+        "exile target",
+        "then return it to the battlefield",
+        "return that card to the battlefield",
+        "enters the battlefield"
+      ],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": []
+    },
+    {
+      "key": "combat",
+      "name": "Combat Manipulation",
+      "aliases": [
+        "combat tricks",
+        "combat",
+        "fog",
+        "goad"
+      ],
+      "description": "Controlling how combat works \u2014 first strike, deathtouch, lifelink, vigilance, fog effects, goad, lure.",
+      "oracle_hints": [],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": [
+        {
+          "key": "combat.fog",
+          "name": "Fog",
+          "aliases": [
+            "fog",
+            "damage prevention",
+            "safe passage"
+          ],
+          "description": "Prevent all combat damage for a turn.",
+          "oracle_hints": [
+            "prevent all combat damage"
+          ],
+          "keywords": [],
+          "card_text_regex": [
+            "prevent all combat damage"
+          ],
+          "examples": [
+            "Fog",
+            "Arachnogenesis",
+            "Inkshield",
+            "Deflecting Swat",
+            "Deflecting Palm",
+            "Comeuppance",
+            "Batwing Brume",
+            "Dawn Charm",
+            "Obscuring Haze",
+            "Tangle"
+          ],
+          "children": []
+        },
+        {
+          "key": "combat.goad",
+          "name": "Goad",
+          "aliases": [
+            "goad",
+            "forced attack",
+            "must attack"
+          ],
+          "description": "Force opponents' creatures to attack someone else.",
+          "oracle_hints": [
+            "goaded",
+            "attacks each combat if able",
+            "must attack"
+          ],
+          "keywords": [
+            "Goad"
+          ],
+          "card_text_regex": [
+            "creatures must attack"
+          ],
+          "examples": [
+            "Disrupt Decorum",
+            "Kardur, Doomscourge",
+            "Geode Rager"
+          ],
+          "children": []
+        },
+        {
+          "key": "combat.lure",
+          "name": "Lure",
+          "aliases": [
+            "lure",
+            "must block",
+            "provoke"
+          ],
+          "description": "Force an opponent's creature to block yours.",
+          "oracle_hints": [
+            "must be blocked",
+            "blocks if able",
+            "all creatures able to block"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "key": "life",
+      "name": "Life Management",
+      "aliases": [
+        "lifegain",
+        "life gain",
+        "drain",
+        "life loss"
+      ],
+      "description": "Gaining life, draining opponents, or paying life as a resource.",
+      "oracle_hints": [],
+      "keywords": [],
+      "card_text_regex": [],
+      "examples": [],
+      "children": [
+        {
+          "key": "life.gain",
+          "name": "Life Gain",
+          "aliases": [
+            "lifegain",
+            "life gain",
+            "heal",
+            "gain life"
+          ],
+          "description": "Gain life to stabilize or trigger payoffs.",
+          "oracle_hints": [
+            "gain life",
+            "gains life"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        },
+        {
+          "key": "life.drain",
+          "name": "Drain",
+          "aliases": [
+            "drain",
+            "life drain",
+            "extort"
+          ],
+          "description": "Opponent loses life and you gain that much life.",
+          "oracle_hints": [
+            "loses life",
+            "you gain that much life",
+            "deals damage",
+            "you gain life equal"
+          ],
+          "keywords": [],
+          "card_text_regex": [],
+          "examples": [],
+          "children": []
+        }
+      ]
     }
+  ]
 }
