@@ -336,6 +336,7 @@ def _all_card_names() -> list[str]:
 
     ~35k names, about a second to fetch. `pg_trgm` would let Postgres do this
     instead, but it is not installed and this app has no DDL rights.
+    Loaded on the first typo path only — not on the landing page.
     """
     global _name_cache
     with _name_cache_lock:

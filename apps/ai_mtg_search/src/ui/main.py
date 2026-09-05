@@ -23,8 +23,9 @@ EXAMPLE_QUERIES = [
 ]
 
 
+@st.cache_data(show_spinner=False)
 def load_ui_text(name: str) -> str:
-    """Read a markdown (or other text) file sitting next to this module."""
+    """Read a markdown file sitting next to this module. Cached across reruns."""
     return (_UI_DIR / name).read_text(encoding="utf-8")
 
 
@@ -120,8 +121,8 @@ def render_seed_picker(
 
     Streamlit radios are plain text (no markdown or links), so the option
     list stays scannable and the image / shop links live on the selection.
-    `on_confirm(oracle_id, card_name)` runs as a button callback so the
-    search box can be rewritten before the next script run.
+    `on_confirm` is a button callback so it runs before widgets on the
+    next script run. Filtering reruns the page but not the pipeline.
     """
     if pick_kind == "fuzzy":
         st.info(
