@@ -21,12 +21,15 @@ live database, reproducible with notebooks/eda.ipynb:
 
 import json
 import threading
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Literal
 
 from rapidfuzz import fuzz, process
 
 from src.constants import (
+    LEGALITY_FORMATS,
     SOURCE_CARD_NAME,
     SOURCE_CARD_TEXT,
     SOURCE_RULES,
@@ -37,6 +40,7 @@ from src.db.cards import (
     lookup_card_by_oracle_id,
     lookup_card_exact,
     lookup_cards_containing_name,
+    merge_search_hits,
     sort_for_picker,
 )
 from src.db.neon import query
@@ -49,8 +53,36 @@ _JOIN_ON_EMBEDDING_ID = """
      AND c.face_index = split_part(e.id, ':', 2)::int
 """
 
+# Opt-in log of vector SQL calls. Streamlit leaves this unset.
+_vector_search_log: ContextVar[list | None] = ContextVar(
+    "vector_search_log", default=None
+)
+
+
+def record_search_event(event: dict) -> None:
+    """Append to the active `trace_vector_searches()` log, or no-op."""
+    log = _vector_search_log.get()
+    if log is not None:
+        log.append(event)
+
+
+@contextmanager
+def trace_vector_searches():
+    """Collect one event per vector SQL call (and union-dedupe) for inspection."""
+    events: list[dict] = []
+    token = _vector_search_log.set(events)
+    try:
+        yield events
+    finally:
+        _vector_search_log.reset(token)
+
+
 NAME_CANDIDATES = 25
 TEXT_CANDIDATES = 50
+
+# Cosine floor on `card_text` vector search (similarity = 1 - <=> ).
+# Name search and RapidFuzz name matching use different scales; do not reuse this.
+MIN_TEXT_SIMILARITY = 0.6
 
 # How many name-vector / RapidFuzz neighbours to consider before floor+gap.
 # High enough that a typo of a large character line (Ajani, Jace) is not
@@ -80,29 +112,50 @@ def _build_filters(
     types_all: list[str] | None = None,
     subtypes_all: list[str] | None = None,
     keywords_all: list[str] | None = None,
+    colors: list[str] | None = None,
+    colors_all: list[str] | None = None,
     color_identity: list[str] | None = None,
     layout: list[str] | None = None,
     max_mana_value: float | None = None,
     min_mana_value: float | None = None,
+    legal_in: str | list[str] | None = None,
     commander_legal: bool = False,
     exclude_funny: bool = False,
 ) -> tuple[list[str], dict]:
     """
     Translate filter kwargs into SQL predicates on `cards`.
 
-    Array columns come in two flavours because both are needed: `keywords`
-    overlaps (`&&`, any of), while `keywords_all` contains (`@>`, all of).
-    "Flying or vigilance" and "flying and vigilance" are different questions,
-    and only the second answers "creatures with flying and vigilance".
+    Every kwarg is a real column (or a JSONB key on `legalities`). The planner
+    does not emit these yet; `search_card_text(..., **filters)` and
+    `filter_cards` already accept them.
 
-    `color_identity` is contained the other way round (`<@`): asking for Dimir
-    means cards playable in Dimir, not cards that happen to include blue.
+    Array columns come in two flavours: `keywords` overlaps (`&&`, any of),
+    while `keywords_all` contains (`@>`, all of). "Flying or vigilance" and
+    "flying and vigilance" are different questions.
+
+    `color_identity` is contained the other way (`<@`): Dimir means cards
+    playable in Dimir. `colors` is the face's actual color and uses `&&` /
+    `@>` like types.
+
+    `legal_in` checks `legalities->>format = 'Legal'` (MTGJson capitalization).
+    `commander_legal=True` is sugar for `legal_in='commander'`.
     """
     clauses: list[str] = []
     params: dict = {}
 
-    any_of = {"types": types, "subtypes": subtypes, "supertypes": supertypes, "keywords": keywords}
-    all_of = {"types": types_all, "subtypes": subtypes_all, "keywords": keywords_all}
+    any_of = {
+        "types": types,
+        "subtypes": subtypes,
+        "supertypes": supertypes,
+        "keywords": keywords,
+        "colors": colors,
+    }
+    all_of = {
+        "types": types_all,
+        "subtypes": subtypes_all,
+        "keywords": keywords_all,
+        "colors": colors_all,
+    }
 
     for column, values in any_of.items():
         if values:
@@ -130,8 +183,20 @@ def _build_filters(
         clauses.append("c.mana_value >= %(min_mana_value)s")
         params["min_mana_value"] = min_mana_value
 
+    formats: list[str] = []
+    if legal_in:
+        formats.extend([legal_in] if isinstance(legal_in, str) else list(legal_in))
     if commander_legal:
-        clauses.append("(c.legalities->>'commander') = 'Legal'")
+        formats.append("commander")
+    seen_formats: set[str] = set()
+    for i, fmt in enumerate(formats):
+        key = fmt.strip().lower()
+        if key not in LEGALITY_FORMATS or key in seen_formats:
+            continue
+        seen_formats.add(key)
+        param = f"legal_fmt_{i}"
+        clauses.append(f"(c.legalities->>%({param})s) = 'Legal'")
+        params[param] = key
 
     if exclude_funny:
         clauses.append("NOT c.is_funny")
@@ -147,6 +212,10 @@ def _vector_search(source: str, text: str, k: int, filters: dict) -> list[dict]:
 
     if source == SOURCE_CARD_TEXT:
         clauses.append("length(e.chunk_text) > 0")
+        clauses.append(
+            "(1 - (e.embedding <=> %(qvec)s::vector)) >= %(min_sim)s"
+        )
+        params["min_sim"] = MIN_TEXT_SIMILARITY
     clauses.insert(0, "e.source = %(source)s")
     params["source"] = source
 
@@ -164,16 +233,39 @@ def _vector_search(source: str, text: str, k: int, filters: dict) -> list[dict]:
         params,
         exact=True,
     )
-    return dedupe_cards(rows)[:k]
+    unique = dedupe_cards(rows)
+    if source == SOURCE_CARD_TEXT:
+        unique = [
+            row
+            for row in unique
+            if row.get("similarity") is not None
+            and float(row["similarity"]) >= MIN_TEXT_SIMILARITY
+        ]
+    result = unique[:k]
+    record_search_event(
+        {
+            "event": "vector_sql",
+            "source": source,
+            "input": text,
+            "k": k,
+            "min_similarity": MIN_TEXT_SIMILARITY if source == SOURCE_CARD_TEXT else None,
+            "sql_limit": k * 2,
+            "sql_rows": len(rows),
+            "after_face_dedupe": len(unique),
+            "returned": len(result),
+            "names": [row["name"] for row in result],
+        }
+    )
+    return result
 
 
 def search_card_text(query_text: str, k: int = TEXT_CANDIDATES, **filters) -> list[dict]:
     """
     Semantic search over preprocessed oracle text.
 
-    Queries containing mana or tap notation are preprocessed the same way the
-    ETL preprocessed the documents, so `{T}` lands near "Tap (tap this
-    permanent)" instead of nowhere.
+    One vector query, one string. Queries containing mana or tap notation are
+    preprocessed the same way the ETL preprocessed the documents, so `{T}`
+    lands near "Tap (tap this permanent)" instead of nowhere.
     """
     if "{" in query_text:
         query_text = preprocess_oracle_text(query_text)
@@ -395,14 +487,15 @@ def _format_card(index: int, card: dict) -> str:
     if face and face != card.get("name"):
         heading += f"  [matched face: {face}]"
 
-    mana = card.get("mana_cost") or "no cost"
-    mana_value = card.get("mana_value")
-    if mana_value is not None:
-        mana += f" (mv {mana_value:g})"
-
     fields = [
         ("type", card.get("type_line")),
-        ("mana", mana),
+        ("mana", card.get("mana_cost") or "no cost"),
+        # Numeric converted cost for ranking only. The prompt forbids echoing
+        # this as "mv N"; write-ups should cite the printed `mana` line.
+        (
+            "mana value",
+            None if card.get("mana_value") is None else f"{card['mana_value']:g}",
+        ),
         ("colors", "/".join(card.get("color_identity") or []) or "colorless"),
         ("stats", _combat_stats(card)),
         ("keywords", ", ".join(card.get("keywords") or [])),
@@ -426,6 +519,7 @@ def format_candidates(rows: list[dict]) -> str:
 # Re-export card lookups so callers can keep importing from search if needed.
 __all__ = [
     "TEXT_CANDIDATES",
+    "MIN_TEXT_SIMILARITY",
     "FUZZY_AUTO_ACCEPT",
     "SeedMatchResult",
     "card_abilities",
@@ -436,8 +530,11 @@ __all__ = [
     "lookup_card_by_oracle_id",
     "lookup_card_exact",
     "lookup_cards_containing_name",
+    "merge_search_hits",
     "resolve_card",
     "search_card_name",
     "search_card_text",
     "search_rules",
+    "trace_vector_searches",
+    "record_search_event",
 ]

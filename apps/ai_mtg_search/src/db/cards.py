@@ -33,7 +33,8 @@ def dedupe_cards(rows: list[dict]) -> list[dict]:
     Keep the best-ranked face of each card, preserving order.
 
     Multi-faced cards store one row per face, so an unfiltered result set can
-    show the same card several times.
+    show the same card several times. First occurrence wins — callers that
+    `ORDER BY` distance should pass rows in that order.
     """
     seen: set[str] = set()
     unique = []
@@ -43,6 +44,33 @@ def dedupe_cards(rows: list[dict]) -> list[dict]:
             seen.add(oracle_id)
             unique.append(row)
     return unique
+
+
+def merge_search_hits(rows: list[dict], *, limit: int | None = None) -> list[dict]:
+    """
+    Collapse hits from several vector queries to one row per card.
+
+    The same oracle id can appear in more than one batch (e.g. one search per
+    ability). Keep the higher `similarity`; ties keep the earlier row. The
+    caller never sees duplicate oracle ids.
+    """
+    best: dict[str, dict] = {}
+    order: list[str] = []
+    for row in rows:
+        oracle_id = row["scryfall_oracle_id"]
+        prev = best.get(oracle_id)
+        if prev is None:
+            best[oracle_id] = row
+            order.append(oracle_id)
+            continue
+        prev_sim = prev.get("similarity")
+        new_sim = row.get("similarity")
+        if new_sim is not None and (prev_sim is None or float(new_sim) > float(prev_sim)):
+            best[oracle_id] = row
+    merged = [best[oid] for oid in order]
+    if limit is not None:
+        return merged[:limit]
+    return merged
 
 
 def sort_for_picker(rows: list[dict]) -> list[dict]:
