@@ -40,14 +40,22 @@ def _from_streamlit_secrets(key: str) -> str | None:
 
 
 def get_database_url() -> str:
-    """Resolve the Neon connection string, preferring the environment."""
-    url = os.getenv("DATABASE_URL") or _from_streamlit_secrets("DATABASE_URL")
-    if not url:
-        raise EnvironmentError(
-            "Missing DATABASE_URL. Copy .env.example to .env and set the Neon "
-            "connection string, or add it to Streamlit secrets."
-        )
-    return url
+    """
+    Resolve the Neon connection string.
+
+    Prefer `DATABASE_URL_READONLY` (least-privilege reader role) over
+    `DATABASE_URL` so a compromised app cannot write even if application
+    code is wrong. Streamlit secrets follow the same order.
+    """
+    for key in ("DATABASE_URL_READONLY", "DATABASE_URL"):
+        url = os.getenv(key) or _from_streamlit_secrets(key)
+        if url:
+            return url
+    raise EnvironmentError(
+        "Missing DATABASE_URL_READONLY (preferred) or DATABASE_URL. "
+        "Copy .env.example to .env and set a read-only Neon connection "
+        "string, or add it to Streamlit secrets."
+    )
 
 
 def get_llm_api_key() -> str | None:
