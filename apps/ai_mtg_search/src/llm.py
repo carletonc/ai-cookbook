@@ -9,7 +9,11 @@ from typing import Any, Literal
 
 from langchain.prompts import PromptTemplate
 
-from src.db.cards import lookup_card_by_oracle_id
+from src.db.cards import (
+    drop_equivalent_to_seed,
+    legal_cards_first,
+    lookup_card_by_oracle_id,
+)
 from src.llm_client import (
     PLANNER_MAX_TOKENS,
     RANKER_MAX_TOKENS,
@@ -243,11 +247,9 @@ async def _candidates_for_seed(seed: dict) -> list[dict]:
     for batch in batches:
         candidates.extend(batch)
 
-    merged = [
-        card
-        for card in merge_search_hits(candidates)
-        if card["scryfall_oracle_id"] != seed["scryfall_oracle_id"]
-    ][:MAX_CANDIDATES]
+    merged = legal_cards_first(
+        drop_equivalent_to_seed(seed, merge_search_hits(candidates))
+    )[:MAX_CANDIDATES]
     record_search_event(
         {
             "event": "seed_union_dedupe",
@@ -393,6 +395,7 @@ async def pipeline(
                 TEXT_CANDIDATES,
             )
             timings["retrieve"] = int((time.perf_counter() - t1) * 1000)
+            candidates = legal_cards_first(candidates)
             if not candidates:
                 return PipelineResult(
                     status="done",

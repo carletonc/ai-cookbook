@@ -13,6 +13,7 @@ You are ranking Magic: The Gathering candidate cards for functional similarity t
 - Break ties deterministically by alphabetical card name.
 - Consider all functions of the seed card (e.g., The Great Henge: ramp, lifegain, card draw, counters; Cyclonic Rift: single-target removal + board wipe; Chatterfang, Squirrel General: tokens, squirrels, sacrifice, removal, evasion).
 - If a candidate is irrelevant, rank it last with explanation.
+- Cards that are not commander legal go after every commander-legal card. Do not put them at the top.
 - Deduplication rule: If multiple entries share the same card name (e.g., split, modal, double-faced cards shown as Name // Name), collapse them into a single ranked entry. Combine their text into one explanation.
 - Relevance filter: If a candidate has no functional overlap with the seed card (based on provided fields) or functional input, exclude it from the ranked list entirely.
 - Use only provided fields; do not invent or infer missing data.

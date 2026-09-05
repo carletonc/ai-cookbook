@@ -73,6 +73,34 @@ def merge_search_hits(rows: list[dict], *, limit: int | None = None) -> list[dic
     return merged
 
 
+def _norm_oracle_text(card: dict) -> str:
+    return " ".join((card.get("oracle_text") or "").split()).lower()
+
+
+def drop_equivalent_to_seed(seed: dict, cards: list[dict]) -> list[dict]:
+    """
+    Drop the seed and color-shifted / playtest copies of the same rules text.
+
+    Dedupe is by oracle id only; White Rhystic Study is a different id with
+    the same oracle text, so it would otherwise rank as the best alternative.
+    """
+    seed_id = seed.get("scryfall_oracle_id")
+    seed_text = _norm_oracle_text(seed)
+    kept = []
+    for card in cards:
+        if card.get("scryfall_oracle_id") == seed_id:
+            continue
+        if seed_text and _norm_oracle_text(card) == seed_text:
+            continue
+        kept.append(card)
+    return kept
+
+
+def legal_cards_first(cards: list[dict]) -> list[dict]:
+    """Stable: commander-legal rows stay in order, then the rest."""
+    return sorted(cards, key=lambda card: 0 if card.get("commander_legal") else 1)
+
+
 def sort_for_picker(rows: list[dict]) -> list[dict]:
     """Commander-legal first, then alphabetical by name (stable for the picker)."""
     return sorted(
