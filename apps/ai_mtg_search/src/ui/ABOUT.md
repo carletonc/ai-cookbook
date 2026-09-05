@@ -4,8 +4,8 @@ An LLM answers from the average of its training data, and Magic is a small slice
 
 Four properties of the domain also break plain semantic search:
 
-1. **Technical vocabulary.** Ordinary words are load-bearing rules terms: a *tutor* searches your library, to *mill* is to move cards from library to graveyard, and *counter* means both cancelling a spell and a myriad of possible marker sitting on a creature. The collisions have mechanical consequences — *destroy*, *exile*, and *sacrifice* all read as "removal," but indestructible stops only the first, exile doesn't count as dying (so death triggers never fire), and sacrifice ignores both. Embeddings put these terms next to each other because English does; the rules pull them apart.
-2. **Embedded slang.** *Mana rock*, *board wipe*, and *impulse draw* appear nowhere in official card text or the rulebook, yet they're how players actually search. Some of it inverts the plain meaning: impulse draw isn't drawing at all — it exiles cards to play temporarily, so none of the "whenever you draw" triggers a model would assume actually fire.
+1. **Technical vocabulary.** Ordinary words are load-bearing rules terms: to *mill* is to move cards from library to graveyard, and *counter* means both cancelling a spell and a marker sitting on a creature. The collisions have mechanical consequences — *destroy*, *exile*, and *sacrifice* all read as "removal," but indestructible stops only the first, exile doesn't count as dying (so death triggers never fire), and sacrifice ignores both. Embeddings put these terms next to each other because English does; the rules pull them apart.
+2. **Embedded slang.** *Mana rock*, *board wipe*, and *impulse draw* appear nowhere in official card text or the rulebook, yet they're how players actually search. *Tutor* is the same kind of word: a few titles use it (*Demonic Tutor*), but the printed effect is "search your library," and most cards that do that do not say tutor at all. A name-vector hit on "tutor" therefore misses the effect, and a text-vector hit on "tutor" misses the name. Some slang also inverts the plain meaning: impulse draw isn't drawing at all — it exiles cards to play temporarily, so none of the "whenever you draw" triggers a model would assume actually fire.
 3. **One need, many mechanics.** "Stop a flying creature" is served by several unrelated functions — reach, removal, ability-stripping, or a global effect — each with entirely different card text.
 4. **One card, many functions.** A single card can be ramp, lifegain, and card draw at once. Embedding it as one document blurs all three into one vector.
 
@@ -14,26 +14,26 @@ What makes that worth solving is the shape of the game itself. The strongest car
 ## Architecture
 
 ```
-Query → Router (LLM) → Retrieval (vector + fuzzy) → Re-ranker (LLM) → Ranked cards + rationale
+Query → Router (LLM) → Name resolve or text search → [picker if needed] → Re-ranker (LLM) → Write-up
 ```
 
-**1. Router.** An LLM classifies the query into `seed_card` ("alternatives to Rhystic Study"), `text_search` ("draw when opponents cast spells"), or `unsupported`, returning strict JSON. Out-of-scope asks — rules adjudication, price-only, "what commander should I build" — are declined rather than answered badly. The cheapest fix for a hallucination is not answering.
+**1. Router.** An LLM classifies the query into `seed_card` ("alternatives to Rhystic Study"), `text_search` ("draw when opponents cast spells"), or `unsupported`, returning strict JSON. Intent chooses the path; empty or weak hits do not switch routes. Out-of-scope asks — rules adjudication, price-only, "what commander should I build" — are declined rather than answered badly. The cheapest fix for a hallucination is not answering.
 
-**2. Retrieval.** Card data lives in Neon Postgres with `pgvector`, maintained by a separate weekly ETL repo (`mtg-db`); this app is read-only and embeds queries only. Two vector spaces are kept apart on purpose — one over card *names*, one over preprocessed oracle *text* — alongside the structured columns (type, mana value, colour identity, keywords, legality) as SQL predicates.
+**2. Retrieval.** Card data lives in Neon Postgres with `pgvector`, maintained by a separate weekly ETL repo (`mtg-db`); this app is read-only (prefer a reader role) and embeds queries only. Two vector spaces are kept apart on purpose — one over card *names*, one over preprocessed oracle *text* — alongside the structured columns (type, mana value, colour identity, keywords, legality) as SQL predicates. Those filters are implemented; the router does not emit them yet.
 
-- *Seed card path*: resolve the name by unioning semantic search over the name vectors with lexical fuzzy matching, then **split the card's text into its individual abilities and run one semantic query per ability**, unioning the results. This is the fix for one-card-many-functions.
-- *Text path*: a single embedding query, top-50 for recall.
+- *Seed card path*: resolve the name with exact title, then SQL contains (character lines like Narset), then a union of name-vector neighbours and RapidFuzz with a floor and a gap from the best score. Several hits, or a weak unique typo, open a picker; only a high-confidence unique typo continues on its own. After a seed is chosen, **split its oracle text into abilities and run one text search per ability**, keep the higher similarity per card, and drop the seed. That is the fix for one-card-many-functions.
+- *Text path*: one embedding query, one string, top-50, with a 0.6 cosine floor. Name matching is not mixed in.
 
 Keeping the two spaces separate matters more than any tuning: `card_text` holds oracle text only, so a name query aimed at it returns cards that merely *mention* the name. Searching for "Lightning Bolt" there never returns Lightning Bolt.
 
-**3. LLM re-ranker.** Candidates are scored against a fixed priority ladder — effect family → scope → speed → mana efficiency → type fit → color identity → legality — with deterministic tie-breaks, deduplication of split/modal/double-faced printings, and removal of zero-overlap candidates. Each surviving card gets a one-sentence factual justification.
+**3. LLM re-ranker.** Candidates are scored against a fixed priority ladder — effect family → scope → speed → mana efficiency → type fit → color identity → legality. Mana efficiency uses the numeric mana value (lower is usually better, then extra or conditional costs in the text); the write-up cites the printed mana cost, not "mv". Split, modal, and double-faced printings are collapsed; cards with no functional overlap are dropped. Each surviving card gets a short factual justification.
 
-The ranker is constrained to the retrieved fields only. **The model supplies reasoning; the index supplies facts.**
+The ranker is constrained to the retrieved fields only. **The model supplies reasoning; the index supplies facts.** After a seed search, the UI keeps that card's art and text on the page so the write-up has something to compare against.
 
 ## Design decisions
 
 - **Grounding over model size.** Both LLM stages run a small, inexpensive model at low temperature. Retrieved card text does the work a frontier model would only approximate — cheaper *and* more accurate in a niche domain.
-- **Deterministic by design.** Single-turn, no agent loop, fixed tie-breaks. The same query returns the same ranking, which is what makes evaluation and iteration possible.
+- **Deterministic retrieval, not a deterministic write-up.** Single-turn, no agent loop. Vector search is an exact scan with a stable secondary sort; name resolution is a fixed ladder. The ranker follows a fixed priority list at temperature 0.1, but it has no seed — the same query can change wording and the last few ranks.
 - **Function over popularity.** Ranking reads card text, so an obscure $0.25 card competes with a $65 staple on equal footing.
 - **Refusal over guessing.** An out-of-scope query returns a scope message instead of a plausible answer assembled from nothing. A name that resolves too weakly is refused rather than silently matched to the nearest vector — measured separation is wide (genuine misspellings score 81–100 on the fuzzy scale, nonsense 30–60).
 
@@ -55,7 +55,7 @@ The zero-recall queries were the useful output. They cluster into three groups, 
 
 ## Roadmap
 
-- Planner emits structured filters (colour, mana value, keywords, legality) rather than only a search string — the SQL half of the system is currently unreachable from a user query
-- A mechanic taxonomy (keyword and regex patterns per effect family) to expand player slang into oracle phrasing
+- Planner emits structured filters (colour, mana value, keywords, legality) rather than only a search string — `_build_filters` already matches the Neon `cards` columns; the router still does not fill it
+- Player slang still fails as a `card_text` query ("ramp", "burn", "spellslinger"). Expanding those phrases into oracle wording is future work; it is not on the live search path
 - Rules and glossary retrieval: 3,674 chunks are indexed and queryable, but the router still declines rules questions
 - Price-aware ranking, making budget substitution a first-class objective
