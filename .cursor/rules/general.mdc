@@ -1,0 +1,40 @@
+---
+description: Smallest change; stay in the named app
+alwaysApply: true
+---
+
+# Smallest change
+
+This is a monorepo of independent apps. Work only in the app the user
+named. One ask = the fewest files that complete that ask.
+
+## Scope
+
+- Adjacent dead code is a separate bullet. Name it; do not include it.
+- "Show the changes" means a file list first. Wait for go.
+- More than three files for "delete unused X" is over-scoped — cut it.
+- Do not edit README, docs, Cursor rules, or unused helpers the user
+  did not name.
+- Do not re-interpret "fix #1" as everything under that review heading.
+- Commit and push the branch. Do not merge to `main`.
+
+## Stay in one app
+
+- Do not add a module, helper, test, or doc that the app's live path
+  does not call in the same change.
+- Ship the wiring or leave the files uncreated.
+- Tests must fail if the path a user can run breaks.
+- Do not add a library the app does not already use.
+
+## Do not gold-plate
+
+- No new abstraction layer for a single script.
+- No extra design doc. One README + at most one short in-app about.
+- Do not swallow exceptions without a log.
+
+## Example
+
+User: do #1 (unused module) in `apps/foo`.
+
+- Bad: the module + unused neighbors + README + files in another app
+- Good: the unused module and the tests that import it

@@ -9,6 +9,9 @@ alwaysApply: false
 Card data lives in **Neon Postgres + pgvector**, populated weekly by a separate repo (`mtg-db`).
 Full contract: `apps/ai_mtg_search/docs/neon-pgvector-handoff.md` — read it before changing retrieval.
 
+Slang / labeling taxonomy is `apps/ai_mtg_search/data/taxonomy.json`.
+`mtg_taxonomy.py` only loads it. Do not grow a second tree.
+
 ## Hard invariants
 
 - **Read-only.** This app never writes to `cards` or `embeddings`, and never downloads MTGJson/rules data. `mtg-db` owns all document vectors; this app embeds **queries only**.
