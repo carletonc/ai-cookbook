@@ -1,0 +1,31 @@
+---
+description: Data source contract for the ai_mtg_search app (Neon Postgres + pgvector, owned by the external mtg-db repo)
+globs: apps/ai_mtg_search/**
+alwaysApply: false
+---
+
+# MTG retrieval data source
+
+Card data lives in **Neon Postgres + pgvector**, populated weekly by a separate repo (`mtg-db`).
+Full contract: `apps/ai_mtg_search/docs/neon-pgvector-handoff.md` — read it before changing retrieval.
+
+## Hard invariants
+
+- **Read-only.** This app never writes to `cards` or `embeddings`, and never downloads MTGJson/rules data. `mtg-db` owns all document vectors; this app embeds **queries only**.
+- **Embedding model must match:** `sentence-transformers/all-MiniLM-L6-v2`, **384-dim**, cosine. Never use OpenAI embeddings (1536-dim) against these vectors.
+- Similarity is `1 - (embedding <=> qvec)`; order by `embedding <=> qvec`.
+
+## Schema essentials
+
+- `cards`: PK `(scryfall_oracle_id, face_index)`, one row per face. `TEXT[]` columns (`colors`, `color_identity`, `types`, `subtypes`, `keywords`) are GIN-indexed; `legalities` is JSONB.
+- `embeddings`: PK `(id, source, chunk_index)`. `source` is one of `card_name` | `card_text` | `rules`.
+- Card embedding ids are `"{scryfall_oracle_id}:{face_index}"`; join with
+  `ON c.scryfall_oracle_id = split_part(e.id,':',1) AND c.face_index = split_part(e.id,':',2)::int`.
+
+## Retrieval gotchas
+
+- `card_text` vectors contain **preprocessed oracle text only** — no name, type line, mana cost, or P/T. Filter those with SQL on `cards`, not with the vector.
+- ~366 `card_text` rows have empty `chunk_text`; always add `AND length(e.chunk_text) > 0`.
+- Preprocess queries with `preprocess_oracle_text` when they contain mana/tap symbols like `{T}` or `{W/P}`.
+- Prefer filter-then-vector composition over stuffing metadata into one blob.
+- Neon scales to zero, so the first query after idle is slow. If recall looks off on IVFFlat, raise `ivfflat.probes` per session.
