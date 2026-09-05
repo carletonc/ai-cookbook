@@ -1,9 +1,18 @@
+from collections.abc import Callable
 from pathlib import Path
 
 import streamlit as st
 
+from src.ui.card_links import (
+    fetch_image_bytes,
+    picker_haystack,
+    picker_option_label,
+    scryfall_card_url,
+    scryfall_image_url,
+    tcgplayer_search_url,
+)
+
 _UI_DIR = Path(__file__).resolve().parent
-_SNIPPET_LEN = 140
 
 # Clickable demos for visitors who do not know Magic well.
 EXAMPLE_QUERIES = [
@@ -19,19 +28,59 @@ def load_ui_text(name: str) -> str:
     return (_UI_DIR / name).read_text(encoding="utf-8")
 
 
-def picker_label(card: dict) -> str:
-    """Uniform radio label: full name, type line, and a short oracle snippet."""
-    name = card.get("name") or "(unnamed)"
-    type_line = card.get("type_line") or ""
-    text = (card.get("oracle_text") or "").replace("\n", " ").strip()
-    if len(text) > _SNIPPET_LEN:
-        text = text[: _SNIPPET_LEN - 1].rstrip() + "…"
-    lines = [name]
-    if type_line:
-        lines.append(type_line)
-    if text:
-        lines.append(text)
-    return "\n".join(lines)
+def _combat_stats(card: dict) -> str | None:
+    if card.get("power") is not None or card.get("toughness") is not None:
+        return f"{card.get('power') or '?'}/{card.get('toughness') or '?'}"
+    if card.get("loyalty") is not None:
+        return f"loyalty {card['loyalty']}"
+    return None
+
+
+@st.cache_data(ttl=60 * 60 * 24, show_spinner=False)
+def _cached_scryfall_image(url: str) -> bytes | None:
+    return fetch_image_bytes(url)
+
+
+def render_card_preview(card: dict, *, caption: str | None = None) -> None:
+    """Art, type, printed cost, and shop links for a resolved seed card."""
+    if caption:
+        st.caption(caption)
+    image_url = scryfall_image_url(card)
+    scryfall = scryfall_card_url(card)
+    tcgplayer = tcgplayer_search_url(card)
+    art, details = st.columns([1, 2])
+
+    with art:
+        image = _cached_scryfall_image(image_url) if image_url else None
+        if image:
+            st.image(image, width=220)
+        else:
+            st.caption("No preview image — use the Scryfall link.")
+
+    with details:
+        st.markdown(f"**{card.get('name') or '(unnamed)'}**")
+        if card.get("type_line"):
+            st.caption(card["type_line"])
+        links = []
+        if scryfall:
+            links.append(f"[Scryfall]({scryfall})")
+        if tcgplayer:
+            links.append(f"[TCGPlayer]({tcgplayer})")
+        if links:
+            st.markdown(" · ".join(links))
+
+        fields = [
+            ("mana", card.get("mana_cost")),
+            ("Color Identity", "/".join(card.get("color_identity") or []) or None),
+            ("stats", _combat_stats(card)),
+            ("commander", "legal" if card.get("commander_legal") else "not legal"),
+            ("edhrec", card.get("edhrec_rank")),
+        ]
+        shown = [f"**{label}:** {value}" for label, value in fields if value not in (None, "")]
+        if shown:
+            st.markdown("  \n".join(shown))
+        if card.get("oracle_text"):
+            st.markdown(card["oracle_text"].replace("\n", "  \n"))
 
 
 def render_example_queries() -> None:
@@ -64,13 +113,15 @@ def render_seed_picker(
     name: str | None,
     *,
     pick_kind: str | None = "contains",
-) -> str | None:
+    on_confirm: Callable[[str, str], None] | None = None,
+) -> None:
     """
-    Show every matching seed card with the same row layout.
+    Name-only radio plus a structured preview of the selected card.
 
-    Returns the chosen `scryfall_oracle_id` when the user confirms, else None.
-    A filter box narrows the in-memory list for long character lines (Jace);
-    it does not change which cards are available.
+    Streamlit radios are plain text (no markdown or links), so the option
+    list stays scannable and the image / shop links live on the selection.
+    `on_confirm(oracle_id, card_name)` runs as a button callback so the
+    search box can be rewritten before the next script run.
     """
     if pick_kind == "fuzzy":
         st.info(
@@ -94,22 +145,31 @@ def render_seed_picker(
         visible = [
             card
             for card in choices
-            if filter_text in picker_label(card).lower()
+            if filter_text in picker_haystack(card)
         ]
 
     if not visible:
         st.warning("No cards in this list match that filter. Clear the filter to see all matches.")
-        return None
+        return
 
-    labels = [picker_label(card) for card in visible]
-    selected_label = st.radio(
+    by_id = {card["scryfall_oracle_id"]: card for card in visible}
+    selected_id = st.radio(
         "Which card?",
-        options=labels,
+        options=list(by_id),
+        format_func=lambda oracle_id: picker_option_label(
+            by_id.get(oracle_id) or {"name": oracle_id}
+        ),
         key="seed_picker_radio",
         label_visibility="collapsed",
     )
-    selected = visible[labels.index(selected_label)]
+    selected = by_id.get(selected_id) or visible[0]
+    render_card_preview(selected)
 
-    if st.button("Find alternatives", type="primary", key="seed_picker_confirm"):
-        return selected["scryfall_oracle_id"]
-    return None
+    st.button(
+        "Find Similar Cards",
+        type="primary",
+        key="seed_picker_confirm",
+        on_click=on_confirm,
+        args=(selected["scryfall_oracle_id"], selected.get("name") or ""),
+        disabled=on_confirm is None,
+    )
