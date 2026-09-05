@@ -116,6 +116,9 @@ def run():
     with st.expander("ℹ️&nbsp;&nbsp;About this app", expanded=False):
         st.markdown(load_ui_text("ABOUT.md"), unsafe_allow_html=True)
 
+    with st.expander("⚙️&nbsp;&nbsp;Technical decisions", expanded=False):
+        st.markdown(load_ui_text("TECHNICAL.md"), unsafe_allow_html=True)
+
     if not is_llm_configured():
         st.error(
             "This demo is not configured yet — missing an LLM API key. "
