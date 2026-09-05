@@ -21,9 +21,10 @@ from src.llm_client import (
 from src.search import (
     FUZZY_AUTO_ACCEPT,
     card_abilities,
-    dedupe_cards,
     find_seed_matches,
     format_candidates,
+    merge_search_hits,
+    record_search_event,
     search_card_text,
 )
 
@@ -60,6 +61,16 @@ QUOTA_MESSAGE = (
     "retrieval does not need the model for exact matches after a pick."
 )
 
+EMPTY_RANKER_MESSAGE = (
+    "The ranker finished without a write-up. Try the same query again — "
+    "the current model sometimes spends its token budget on hidden reasoning."
+)
+
+
+def _ranker_text_or_fallback(text: str | None) -> str:
+    cleaned = (text or "").strip()
+    return cleaned or EMPTY_RANKER_MESSAGE
+
 
 @dataclass
 class PipelineResult:
@@ -74,6 +85,8 @@ class PipelineResult:
     # How the choices were found — selects picker copy ("contains" vs "fuzzy").
     pick_kind: Literal["contains", "fuzzy"] | None = None
     timings_ms: dict[str, int] = field(default_factory=dict)
+    # Resolved seed card when this was a "cards like X" search.
+    seed: dict | None = None
 
 
 def load_prompt(filepath: Path) -> str:
@@ -230,11 +243,22 @@ async def _candidates_for_seed(seed: dict) -> list[dict]:
     for batch in batches:
         candidates.extend(batch)
 
-    return [
+    merged = [
         card
-        for card in dedupe_cards(candidates)
+        for card in merge_search_hits(candidates)
         if card["scryfall_oracle_id"] != seed["scryfall_oracle_id"]
     ][:MAX_CANDIDATES]
+    record_search_event(
+        {
+            "event": "seed_union_dedupe",
+            "seed": seed["name"],
+            "n_ability_searches": len(abilities),
+            "concat_rows": len(candidates),
+            "after_dedupe_exclude_seed": len(merged),
+            "names": [card["name"] for card in merged],
+        }
+    )
+    return merged
 
 
 async def _rank_seed_path(
@@ -256,6 +280,7 @@ async def _rank_seed_path(
                 "Try describing the effect in different words."
             ),
             timings_ms=timings,
+            seed=seed,
         )
 
     ranker_query = (
@@ -268,7 +293,12 @@ async def _rank_seed_path(
         on_token=on_token,
     )
     timings["rank"] = int((time.perf_counter() - t1) * 1000)
-    return PipelineResult(status="done", text=text, timings_ms=timings)
+    return PipelineResult(
+        status="done",
+        text=_ranker_text_or_fallback(text),
+        timings_ms=timings,
+        seed=seed,
+    )
 
 
 async def pipeline(
@@ -379,7 +409,11 @@ async def pipeline(
                 on_token=on_token,
             )
             timings["rank"] = int((time.perf_counter() - t2) * 1000)
-            return PipelineResult(status="done", text=text, timings_ms=timings)
+            return PipelineResult(
+                status="done",
+                text=_ranker_text_or_fallback(text),
+                timings_ms=timings,
+            )
 
         return PipelineResult(
             status="unsupported",

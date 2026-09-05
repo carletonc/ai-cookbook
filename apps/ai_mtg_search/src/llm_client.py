@@ -15,7 +15,10 @@ from src.config import (
 
 TEMPERATURE = 0.1
 PLANNER_MAX_TOKENS = 1024
-RANKER_MAX_TOKENS = 4096
+# Groq free-tier TPM is 8000. A 50-card ranker prompt is ~4k input tokens;
+# reserving 4096 completion tokens makes the *request* ~9k and Groq 413s it.
+# gpt-oss also counts hidden reasoning against this cap.
+RANKER_MAX_TOKENS = 2048
 
 # Process-local daily counter. Fine for a single Streamlit replica demo.
 _request_day: date | None = None
@@ -57,6 +60,13 @@ def consume_llm_request() -> None:
     _request_count += 1
 
 
+def _reasoning_effort_for_model() -> str | None:
+    """gpt-oss otherwise spends the whole completion budget in a hidden channel."""
+    if "gpt-oss" in (LLM_MODEL or "").lower():
+        return "low"
+    return None
+
+
 def get_chat_llm(*, max_tokens: int | None = None, **kwargs) -> ChatOpenAI:
     """Build a ChatOpenAI pointed at whatever host LLM_BASE_URL names."""
     api_key = get_llm_api_key()
@@ -73,6 +83,9 @@ def get_chat_llm(*, max_tokens: int | None = None, **kwargs) -> ChatOpenAI:
     }
     if max_tokens is not None:
         params["max_tokens"] = max_tokens
+    effort = kwargs.pop("reasoning_effort", _reasoning_effort_for_model())
+    if effort:
+        params["reasoning_effort"] = effort
     params.update(kwargs)
     return ChatOpenAI(**params)
 
@@ -82,17 +95,20 @@ def is_quota_error(exc: BaseException) -> bool:
     if isinstance(exc, QuotaExceeded):
         return True
     status = getattr(exc, "status_code", None) or getattr(exc, "http_status", None)
-    if status in (402, 429):
+    if status in (402, 413, 429):
         return True
     text = str(exc).lower()
     markers = (
         "rate limit",
+        "rate_limit",
         "429",
+        "413",
         "402",
         "quota",
         "insufficient",
         "credit",
         "too many requests",
         "resource_exhausted",
+        "tokens per minute",
     )
     return any(m in text for m in markers)
