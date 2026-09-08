@@ -19,6 +19,10 @@ OpenAI key.
 Judgements are cached in .eval_cache/judge.json, keyed by query, card and model,
 so reruns after a retrieval change only pay for candidates not seen before.
 
+Results are split by gold `path` / `coverage` / `gap`. Precision on
+`current` text_search is the number that can move; aspirational gaps are
+expected to stay low until that work ships.
+
 Usage:
     python -m scripts.eval_judge [--k 20] [--limit N] [--model openai/gpt-oss-20b]
 """
@@ -34,6 +38,7 @@ from openai import OpenAI
 
 from src.config import LLM_BASE_URL, LLM_MODEL, get_llm_api_key
 from src.search import search_card_text
+from scripts.eval_retrieval import gold_labels, load_gold, print_label_breakdowns
 
 APP_DIR = Path(__file__).resolve().parent.parent
 GOLD_PATH = APP_DIR / "data" / "gold.json"
@@ -136,7 +141,7 @@ def main() -> int:
 
     client = OpenAI(api_key=api_key, base_url=LLM_BASE_URL)
     cache = _load_cache()
-    gold = json.loads(GOLD_PATH.read_text())[: args.limit]
+    gold = load_gold(args.limit)
 
     print(f"Judge host: {LLM_BASE_URL}  model: {args.model}")
 
@@ -147,9 +152,17 @@ def main() -> int:
             cards = search_card_text(query, k=args.k)
             verdicts = judge(client, args.model, query, cards, cache)
             precision = sum(verdicts) / len(verdicts) if verdicts else 0.0
-            rows.append({"query": query, "precision": precision, "n": len(verdicts)})
+            labels = gold_labels(case)
+            rows.append(
+                {
+                    "query": query,
+                    "precision": precision,
+                    "n": len(verdicts),
+                    **labels,
+                }
+            )
             if args.verbose:
-                print(f"  {precision:>5.0%}  {query[:66]}")
+                print(f"  {precision:>5.0%}  {labels['coverage']:<13}  {query[:50]}")
                 rejected = [c["name"] for c, ok in zip(cards, verdicts) if not ok]
                 if rejected:
                     print(f"         rejected: {', '.join(rejected[:5])}")
@@ -161,6 +174,7 @@ def main() -> int:
     print(f"  mean precision   {statistics.mean(precisions):.1%}")
     print(f"  median           {statistics.median(precisions):.1%}")
     print(f"  queries at 0%    {sum(1 for p in precisions if p == 0)}/{len(precisions)}")
+    print_label_breakdowns(rows, "precision")
 
     worst = sorted(rows, key=lambda r: r["precision"])[:8]
     print("\n  weakest queries")
